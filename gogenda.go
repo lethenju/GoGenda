@@ -53,11 +53,11 @@ func getClient(config *oauth2.Config) *http.Client {
 	// The file token.json stores the user's access and refresh tokens, and is
 	// created automatically when the authorization flow completes for the first
 	// time.
-	tokFile := "token.json"
+	tokFile := "/etc/gogenda/token.json"
 	tok, err := tokenFromFile(tokFile)
 	if err != nil {
 		tok = getTokenFromWeb(config)
-		saveToken("/etc/gogenda/"+tokFile, tok)
+		saveToken(tokFile, tok)
 	}
 	return config.Client(context.Background(), tok)
 }
