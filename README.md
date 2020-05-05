@@ -13,10 +13,10 @@ TODO
 
 The CLI is really easy, just run gogenda and type help to know what you can do
 ```
-~/go/src/github.com/lethenju/gogenda> go run gogenda.go 
+~ $ gogenda
 Welcome to GoGenda!
-> 
-> 
+Version number : 0.1.0
+>
 > help
 == GoGenda ==
  GoGenda helps you keep track of your activities
@@ -28,17 +28,13 @@ Welcome to GoGenda!
  STOP - Stop the current activity
  RENAME - Rename the current activity
  DELETE - Delete the current activity
-> start work
-Enter name of event :  GoGenda Readme Redaction
-Successfully added event ! Work hard! 
-[GoGenda Readme Redaction]> 
-[GoGenda Readme Redaction]> 
-[GoGenda Readme Redaction]> rename
-Enter name of event :  GoGenda : Readme redaction
-Successfully renamed the activity
-[GoGenda : Readme redaction]> 
-[GoGenda : Readme redaction]> stop
-Successfully stopped the activity ! I hope it went well 
+>
+> start work this is my work event
+Successfully added event ! Work hard!
+[this is my work event]>
+[this is my work event]> delete
+Successfully deleted the activity ! I hope it went well
 > exit
 See you later !
+~ $ 
 ```
