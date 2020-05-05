@@ -87,28 +87,21 @@ func commandHandler(command []string, ctx *gogendaContext) (err error) {
 	return nil
 }
 
-func main() {
+func getLastEvent(ctx *gogendaContext) (calendar.Event, error) {
+
+	var selectedEvent calendar.Event
 	usr, _ := user.Current()
 	userDir := usr.HomeDir
 
-	var ctx gogendaContext
-	setupColors(&ctx)
-
-	connect(&ctx)
-	displayInfoHeading(&ctx, "Welcome to GoGenda!")
-	displayInfo(&ctx, "Version number : "+version)
-	runningFlag := true
-	var currentActivity calendar.Event
 	t := time.Now().Format(time.RFC3339)
-	LoadConfiguration(userDir+"/.gogenda/config.json", &ctx)
+	LoadConfiguration(userDir+"/.gogenda/config.json", ctx)
 	events, err := ctx.srv.Events.List("primary").ShowDeleted(false).
 		SingleEvents(true).TimeMin(time.Now().Add(-1 * time.Hour).Format(time.RFC3339)).TimeMax(t).MaxResults(10).OrderBy("startTime").Do()
 	if err != nil {
-		displayError(&ctx, "ERROR : "+err.Error())
-		return
+		displayError(ctx, "ERROR : "+err.Error())
+		return selectedEvent, err
 	}
 
-	var selectedEvent calendar.Event
 	var oldTime calendar.EventDateTime
 	oldTime.DateTime = time.RFC3339
 	selectedEvent.Start = &oldTime
@@ -117,13 +110,25 @@ func main() {
 			selectedEvent = *event
 		}
 	}
+	return selectedEvent, nil
+}
+
+func main() {
+
+	var ctx gogendaContext
+	setupColors(&ctx)
+
+	connect(&ctx)
+	runningFlag := true
+	var currentActivity calendar.Event
+
 	ctx.activity = &currentActivity
 
 	args := os.Args
 	if len(args) > 1 {
 		// For the other commands than start its obvious he/she is
 		if strings.ToUpper(args[1]) != "START" {
-			currentActivity = selectedEvent
+			currentActivity, _ = getLastEvent(&ctx)
 		}
 		// for the START command :
 		// Need to make sure if the user thinks he/she's still going under the last event or not
@@ -135,14 +140,20 @@ func main() {
 		}
 		return
 	}
-	fmt.Println("Last event : " + selectedEvent.Summary)
-	fmt.Println("Are you still doing that ? (y/n)")
-	userInput := ""
-	for userInput != "y" && userInput != "n" {
-		fmt.Scan(&userInput)
-	}
-	if userInput == "y" {
-		currentActivity = selectedEvent
+
+	displayInfoHeading(&ctx, "Welcome to GoGenda!")
+	displayInfo(&ctx, "Version number : "+version)
+	lastEvent, err := getLastEvent(&ctx)
+	if err == nil {
+		fmt.Println("Last event : " + lastEvent.Summary)
+		fmt.Println("Are you still doing that ? (y/n)")
+		userInput := ""
+		for userInput != "y" && userInput != "n" {
+			fmt.Scan(&userInput)
+		}
+		if userInput == "y" {
+			currentActivity = lastEvent
+		}
 	}
 
 	for runningFlag {
