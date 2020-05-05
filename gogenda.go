@@ -238,7 +238,9 @@ func main() {
 		}
 		if command[0] == "EXIT" {
 			println("See you later !")
-			stopActivity(currentActivity, srv)
+			if currentActivity != nil {
+				stopActivity(currentActivity, srv)
+			}
 			runningFlag = false
 			break
 		}
