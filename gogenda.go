@@ -44,7 +44,7 @@ import (
 	"google.golang.org/api/calendar/v3"
 )
 
-const version = "0.1.0"
+const version = "0.1.1"
 
 func commandHandler(command []string, activity *calendar.Event, srv *calendar.Service) (err error) {
 
