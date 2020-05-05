@@ -20,13 +20,14 @@ Welcome to GoGenda!
 > help
 == GoGenda ==
  GoGenda helps you keep track of your activities
- = Commands = 
+ = Commands =
  START WORK - Start a work related activity
- START ORGA - Start a organisation related activity - 
+ START ORGA - Start a organisation related activity -
                 Reading articles, answering mails etc
  START LUNCH - Start a lunch related activity
  STOP - Stop the current activity
  RENAME - Rename the current activity
+ DELETE - Delete the current activity
 > start work
 Enter name of event :  GoGenda Readme Redaction
 Successfully added event ! Work hard! 
