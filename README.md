@@ -7,7 +7,22 @@ In my opinion it is a good and easy way to stay productive by keeping on a task 
 
 ## Installation
 
-TODO
+Install the app with :
+```sh
+mkdir "~/.gogenda/"
+sudo GOBIN=/usr/local/bin/ go install
+```
+
+GoGenda uses the REST Api of Google Calendar.
+
+For obvious security reasons I cannot give you the keys of the application to log in the API.
+
+But you can register your own application [here](https://console.developers.google.com/apis/credentials/wizard?)
+
+Once you have the `credentials.json` file, put it in `.gogenda/` and launch gogenda.
+It will ask you to put a link in your browser to allow your app to connect to your google account.
+
+Then normally everything should work :) 
 
 ## Usage
 
