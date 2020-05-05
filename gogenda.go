@@ -117,7 +117,24 @@ func main() {
 			selectedEvent = *event
 		}
 	}
+	ctx.activity = &currentActivity
 
+	args := os.Args
+	if len(args) > 1 {
+		// For the other commands than start its obvious he/she is
+		if strings.ToUpper(args[1]) != "START" {
+			currentActivity = selectedEvent
+		}
+		// for the START command :
+		// Need to make sure if the user thinks he/she's still going under the last event or not
+		// For now, lets suppose he/she doesnt. He/she should call stop first then start
+
+		res := commandHandler(args[1:], &ctx)
+		if res != nil {
+			displayError(&ctx, "ERROR : "+res.Error())
+		}
+		return
+	}
 	fmt.Println("Last event : " + selectedEvent.Summary)
 	fmt.Println("Are you still doing that ? (y/n)")
 	userInput := ""
@@ -128,7 +145,6 @@ func main() {
 		currentActivity = selectedEvent
 	}
 
-	ctx.activity = &currentActivity
 	for runningFlag {
 
 		scanner := bufio.NewScanner(os.Stdin)
