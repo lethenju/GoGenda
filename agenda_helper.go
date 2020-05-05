@@ -99,3 +99,13 @@ func renameActivity(activity *calendar.Event, text string, srv *calendar.Service
 	_, err = call.Do()
 	return err
 }
+
+func getDuration(activity *calendar.Event) (string, error) {
+
+	startTime, err := time.Parse(time.RFC3339, activity.Start.DateTime)
+	if err != nil {
+		return "", err
+	}
+	duration := time.Since(startTime)
+	return duration.Truncate(time.Second).String(), nil
+}

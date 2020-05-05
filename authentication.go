@@ -33,6 +33,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -40,6 +41,8 @@ import (
 
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
+	"google.golang.org/api/calendar/v3"
 )
 
 // Retrieve a token, saves the token, then returns the generated client.
@@ -91,6 +94,7 @@ func tokenFromFile(file string) (*oauth2.Token, error) {
 
 // Saves a token to a file path.
 func saveToken(path string, token *oauth2.Token) {
+
 	fmt.Printf("Saving credential file to: %s\n", path)
 	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
@@ -98,4 +102,25 @@ func saveToken(path string, token *oauth2.Token) {
 	}
 	defer f.Close()
 	json.NewEncoder(f).Encode(token)
+}
+func connect(ctx *gogendaContext) {
+
+	usr, _ := user.Current()
+	userDir := usr.HomeDir
+
+	b, err := ioutil.ReadFile(userDir + "/.gogenda/credentials.json")
+	if err != nil {
+		log.Fatalf("Unable to read client secret file: %v", err)
+	}
+
+	config, err := google.ConfigFromJSON(b, calendar.CalendarScope)
+	if err != nil {
+		log.Fatalf("Unable to parse client secret file to config: %v", err)
+	}
+	client := getClient(config)
+
+	ctx.srv, err = calendar.New(client)
+	if err != nil {
+		log.Fatalf("Unable to retrieve Calendar client: %v", err)
+	}
 }
