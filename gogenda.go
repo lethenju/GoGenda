@@ -24,7 +24,7 @@ SOFTWARE.
 /*
  ============= GOGENDA SOURCE CODE ===========
  @Description : GoGenda is a CLI for google agenda, to focus on one task at a time and logs your activity
- @Version : 0.1.2
+ @Version : 0.1.3
  @Author : Julien LE THENO
  =============================================
 */
@@ -45,7 +45,7 @@ import (
 	"google.golang.org/api/calendar/v3"
 )
 
-const version = "0.1.2"
+const version = "0.1.3"
 
 type colors struct {
 	colorInfo        *color.Color
@@ -82,13 +82,23 @@ func displayOkNoNL(ctx *gogendaContext, str string) {
 	ctx.colors.colorOk.Print(str)
 }
 
+func getDuration(activity *calendar.Event) (string, error) {
+
+	startTime, err := time.Parse(time.RFC3339, activity.Start.DateTime)
+	if err != nil {
+		return "", err
+	}
+	duration := time.Since(startTime)
+	return duration.Truncate(time.Second).String(), nil
+}
+
 func commandHandler(command []string, ctx *gogendaContext) (err error) {
 
 	switch strings.ToUpper(command[0]) {
 	case "START":
 		var nameOfEvent string
 		if len(command) == 2 {
-			fmt.Print(ctx, "Enter name of event :")
+			fmt.Print("Enter name of event :")
 			scanner := bufio.NewScanner(os.Stdin)
 			if !scanner.Scan() {
 				return
@@ -130,12 +140,11 @@ func commandHandler(command []string, ctx *gogendaContext) (err error) {
 			return errors.New("Nothing to stop")
 		}
 
-		startTime, err := time.Parse(time.RFC3339, ctx.activity.Start.DateTime)
+		duration, err := getDuration(ctx.activity)
 		if err != nil {
 			return err
 		}
-		duration := time.Since(startTime)
-		displayInfo(ctx, "The activity '"+ctx.activity.Summary+"' lasted "+duration.Truncate(time.Second).String())
+		displayInfo(ctx, "The activity '"+ctx.activity.Summary+"' lasted "+duration)
 		if err != nil {
 			return err
 		}
@@ -169,7 +178,7 @@ func commandHandler(command []string, ctx *gogendaContext) (err error) {
 		if err != nil {
 			return err
 		}
-		displayOk(ctx, "Successfully deleted the activity ! I hope it went well ")
+		displayOk(ctx, "Successfully deleted the activity ! ")
 		break
 	case "HELP":
 		displayInfoHeading(ctx, "== GoGenda ==")
@@ -227,9 +236,15 @@ func main() {
 		var command []string
 		for len(command) == 0 {
 			if currentActivity.Id != "" {
-				fmt.Print("[")
-				displayOkNoNL(&ctx, currentActivity.Summary)
-				fmt.Print("]")
+				fmt.Print("[ ")
+				displayOkNoNL(&ctx, currentActivity.Summary+" ")
+				duration, err := getDuration(ctx.activity)
+				if err != nil {
+					displayError(&ctx, "ERROR : "+err.Error())
+				}
+				displayInfoNoNL(&ctx, duration)
+
+				fmt.Print(" ]")
 			}
 			fmt.Print("> ")
 			if !scanner.Scan() {
