@@ -108,6 +108,15 @@ func stopActivity(activity *calendar.Event, srv *calendar.Service) (err error) {
 	activity = nil
 	return err
 }
+func renameActivity(activity *calendar.Event, text string, srv *calendar.Service) (err error) {
+	var edtEnd calendar.EventDateTime
+	edtEnd.DateTime = time.Now().Format(time.RFC3339)
+	activity.Summary = text
+	call := srv.Events.Update("primary", activity.Id, activity)
+	_, err = call.Do()
+	activity = nil
+	return err
+}
 
 func commandHandler(command []string, activity *calendar.Event, srv *calendar.Service) (err error) {
 
@@ -155,9 +164,25 @@ func commandHandler(command []string, activity *calendar.Event, srv *calendar.Se
 		if err != nil {
 			return err
 		}
-		fmt.Println("Successfully stopped the event ! I hope it went well ")
+		fmt.Println("Successfully stopped the activity ! I hope it went well ")
 
 		break
+	case "RENAME":
+		if activity == nil {
+			return errors.New("You dont have a current activity to rename")
+		}
+		fmt.Print("Enter name of event :  ")
+		scanner := bufio.NewScanner(os.Stdin)
+		if !scanner.Scan() {
+			return
+		}
+		nameOfEvent := scanner.Text()
+
+		err = renameActivity(activity, nameOfEvent, srv)
+		if err != nil {
+			return err
+		}
+		fmt.Println("Successfully renamed the activity")
 	}
 
 	return nil
@@ -186,29 +211,28 @@ func main() {
 
 	t := time.Now().Format(time.RFC3339)
 
-	events, err := srv.Events.List("primary").ShowDeleted(false).
-		SingleEvents(true).TimeMin(t).MaxResults(10).OrderBy("startTime").Do()
-	if err != nil {
-		log.Fatalf("Unable to retrieve next ten of the user's events: %v", err)
-	}
-	if len(events.Items) > 0 {
-		currentActivity = events.Items[0]
-	}
-
 	for runningFlag {
 
 		scanner := bufio.NewScanner(os.Stdin)
 		var command []string
 		for len(command) == 0 {
+			if currentActivity != nil {
+				fmt.Print("[" + currentActivity.Summary + "]")
+			}
 			fmt.Print("> ")
 			if !scanner.Scan() {
 				return
 			}
 			userInput := scanner.Text()
-			command = strings.Fields(userInput)
 			userInput = strings.ToUpper(userInput)
+			command = strings.Fields(userInput)
 		}
-
+		if command[0] == "EXIT" {
+			println("See you later !")
+			stopActivity(currentActivity, srv)
+			runningFlag = false
+			break
+		}
 		res := commandHandler(command, currentActivity, srv)
 		if res != nil {
 			println("There was an error " + res.Error())
