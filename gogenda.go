@@ -27,7 +27,7 @@ func getClient(config *oauth2.Config) *http.Client {
 	tok, err := tokenFromFile(tokFile)
 	if err != nil {
 		tok = getTokenFromWeb(config)
-		saveToken(tokFile, tok)
+		saveToken("/etc/gogenda/"+tokFile, tok)
 	}
 	return config.Client(context.Background(), tok)
 }
@@ -108,6 +108,13 @@ func stopActivity(activity *calendar.Event, srv *calendar.Service) (err error) {
 	activity.Id = ""
 	return err
 }
+
+func deleteActivity(activity *calendar.Event, srv *calendar.Service) (err error) {
+	call := srv.Events.Delete("primary", activity.Id)
+	err = call.Do()
+	activity.Id = ""
+	return err
+}
 func renameActivity(activity *calendar.Event, text string, srv *calendar.Service) (err error) {
 	var edtEnd calendar.EventDateTime
 	edtEnd.DateTime = time.Now().Format(time.RFC3339)
@@ -183,6 +190,18 @@ func commandHandler(command []string, activity *calendar.Event, srv *calendar.Se
 		}
 		fmt.Println("Successfully renamed the activity")
 		break
+	case "DELETE":
+		if activity.Id == "" {
+			// Nothing to stop
+			return errors.New("Nothing to delete")
+		}
+		err = deleteActivity(activity, srv)
+		if err != nil {
+			return err
+		}
+		fmt.Println("Successfully deleted activity the activity ! I hope it went well ")
+
+		break
 	case "HELP":
 		fmt.Println("== GoGenda ==")
 		fmt.Println(" GoGenda helps you keep track of your activities")
@@ -193,6 +212,7 @@ func commandHandler(command []string, activity *calendar.Event, srv *calendar.Se
 		fmt.Println(" START LUNCH - Start a lunch related activity")
 		fmt.Println(" STOP - Stop the current activity")
 		fmt.Println(" RENAME - Rename the current activity")
+		fmt.Println(" DELETE - Delete the current activity")
 	default:
 		fmt.Println(command[0] + ": command not found")
 	}
@@ -205,7 +225,7 @@ func main() {
 	runningFlag := true
 	var currentActivity calendar.Event
 
-	b, err := ioutil.ReadFile("credentials.json")
+	b, err := ioutil.ReadFile("/etc/gogenda/credentials.json")
 	if err != nil {
 		log.Fatalf("Unable to read client secret file: %v", err)
 	}
