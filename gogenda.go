@@ -86,7 +86,7 @@ func commandHandler(command []string, activity *calendar.Event, srv *calendar.Se
 		if err != nil {
 			return err
 		}
-		fmt.Println("Successfully added event ! Work hard! ")
+		fmt.Println("Successfully added activity ! ")
 		break
 	case "STOP":
 		if activity.Id == "" {
@@ -99,7 +99,7 @@ func commandHandler(command []string, activity *calendar.Event, srv *calendar.Se
 			return err
 		}
 		duration := time.Since(startTime)
-		fmt.Println("The activity '" + activity.Summary + "' lasted " + duration.String())
+		fmt.Println("The activity '" + activity.Summary + "' lasted " + duration.Truncate(time.Second).String())
 		if err != nil {
 			return err
 		}
