@@ -105,7 +105,7 @@ func stopActivity(activity *calendar.Event, srv *calendar.Service) (err error) {
 	activity.End = &edtEnd
 	call := srv.Events.Update("primary", activity.Id, activity)
 	_, err = call.Do()
-	activity = nil
+	activity.Id = ""
 	return err
 }
 func renameActivity(activity *calendar.Event, text string, srv *calendar.Service) (err error) {
@@ -114,7 +114,6 @@ func renameActivity(activity *calendar.Event, text string, srv *calendar.Service
 	activity.Summary = text
 	call := srv.Events.Update("primary", activity.Id, activity)
 	_, err = call.Do()
-	activity = nil
 	return err
 }
 
@@ -130,7 +129,7 @@ func commandHandler(command []string, activity *calendar.Event, srv *calendar.Se
 		}
 		nameOfEvent := scanner.Text()
 
-		if activity != nil {
+		if activity.Id != "" {
 			// Stop the current activity
 			err = stopActivity(activity, srv)
 			if err != nil {
@@ -156,7 +155,7 @@ func commandHandler(command []string, activity *calendar.Event, srv *calendar.Se
 		fmt.Println("Successfully added event ! Work hard! ")
 		break
 	case "STOP":
-		if activity == nil {
+		if activity.Id == "" {
 			// Nothing to stop
 			return errors.New("Nothing to stop")
 		}
@@ -168,7 +167,7 @@ func commandHandler(command []string, activity *calendar.Event, srv *calendar.Se
 
 		break
 	case "RENAME":
-		if activity == nil {
+		if activity.Id == "" {
 			return errors.New("You dont have a current activity to rename")
 		}
 		fmt.Print("Enter name of event :  ")
@@ -188,12 +187,14 @@ func commandHandler(command []string, activity *calendar.Event, srv *calendar.Se
 		fmt.Println("== GoGenda ==")
 		fmt.Println(" GoGenda helps you keep track of your activities")
 		fmt.Println(" = Commands = ")
-		fmt.Println(" START WORK - start a work related activity")
-		fmt.Println(` START ORGA - start a organisation related activity - 
+		fmt.Println(" START WORK - Start a work related activity")
+		fmt.Println(` START ORGA - Start a organisation related activity - 
 		Reading articles, answering mails etc`)
-		fmt.Println(" START LUNCH - start a lunch related activity")
-		fmt.Println(" STOP - Stops the current activity")
-		fmt.Println(" RENAME - Renames the current activity")
+		fmt.Println(" START LUNCH - Start a lunch related activity")
+		fmt.Println(" STOP - Stop the current activity")
+		fmt.Println(" RENAME - Rename the current activity")
+	default:
+		fmt.Println(command[0] + ": command not found")
 	}
 
 	return nil
@@ -202,7 +203,7 @@ func commandHandler(command []string, activity *calendar.Event, srv *calendar.Se
 func main() {
 	fmt.Println("Welcome to GoGenda!")
 	runningFlag := true
-	var currentActivity *calendar.Event
+	var currentActivity calendar.Event
 
 	b, err := ioutil.ReadFile("credentials.json")
 	if err != nil {
@@ -225,7 +226,7 @@ func main() {
 		scanner := bufio.NewScanner(os.Stdin)
 		var command []string
 		for len(command) == 0 {
-			if currentActivity != nil {
+			if currentActivity.Id != "" {
 				fmt.Print("[" + currentActivity.Summary + "]")
 			}
 			fmt.Print("> ")
@@ -238,13 +239,13 @@ func main() {
 		}
 		if command[0] == "EXIT" {
 			println("See you later !")
-			if currentActivity != nil {
-				stopActivity(currentActivity, srv)
+			if currentActivity.Id != "" {
+				stopActivity(&currentActivity, srv)
 			}
 			runningFlag = false
 			break
 		}
-		res := commandHandler(command, currentActivity, srv)
+		res := commandHandler(command, &currentActivity, srv)
 		if res != nil {
 			println("There was an error " + res.Error())
 		}
