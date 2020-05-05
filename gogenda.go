@@ -24,7 +24,7 @@ SOFTWARE.
 /*
  ============= GOGENDA SOURCE CODE ===========
  @Description : GoGenda is a CLI for google agenda, to focus on one task at a time and logs your activity
- @Version : 0.1.3
+ @Version : 0.1.4
  @Author : Julien LE THENO
  =============================================
 */
@@ -37,6 +37,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/user"
 	"strings"
 	"time"
 
@@ -45,7 +46,7 @@ import (
 	"google.golang.org/api/calendar/v3"
 )
 
-const version = "0.1.3"
+const version = "0.1.4"
 
 type colors struct {
 	colorInfo        *color.Color
@@ -55,9 +56,10 @@ type colors struct {
 }
 
 type gogendaContext struct {
-	activity *calendar.Event
-	srv      *calendar.Service
-	colors   colors
+	activity      *calendar.Event
+	srv           *calendar.Service
+	colors        colors
+	configuration Config
 }
 
 func displayInfo(ctx *gogendaContext, str string) {
@@ -115,20 +117,15 @@ func commandHandler(command []string, ctx *gogendaContext) (err error) {
 		} else {
 			nameOfEvent = strings.Join(command[2:], " ")
 		}
-
-		switch strings.ToUpper(command[1]) {
-		case "WORK":
-			*ctx.activity, err = insertActivity(nameOfEvent, "red", ctx.srv)
-			break
-		case "ORGA":
-			*ctx.activity, err = insertActivity(nameOfEvent, "yellow", ctx.srv)
-			break
-		case "LUNCH":
-			*ctx.activity, err = insertActivity(nameOfEvent, "purple", ctx.srv)
-			break
-		default:
-			return errors.New("I didnt recognised this activity")
+		ourCategory := ConfigCategory{Name: "default", Color: "blue"}
+		for _, category := range ctx.configuration.Categories {
+			if strings.ToUpper(command[1]) == category.Name {
+				ourCategory = category
+			}
 		}
+
+		*ctx.activity, err = insertActivity(nameOfEvent, ourCategory.Color, ctx.srv)
+
 		if err != nil {
 			return err
 		}
@@ -156,13 +153,18 @@ func commandHandler(command []string, ctx *gogendaContext) (err error) {
 		if ctx.activity.Id == "" {
 			return errors.New("You dont have a current activity to rename")
 		}
-		fmt.Print(ctx, "Enter name of event :  ")
-		scanner := bufio.NewScanner(os.Stdin)
-		if !scanner.Scan() {
-			return
-		}
-		nameOfEvent := scanner.Text()
+		var nameOfEvent string
+		if len(command) == 1 {
 
+			fmt.Println(ctx, "Enter name of event :  ")
+			scanner := bufio.NewScanner(os.Stdin)
+			if !scanner.Scan() {
+				return
+			}
+			nameOfEvent = scanner.Text()
+		} else {
+			nameOfEvent = strings.Join(command[1:], " ")
+		}
 		err = renameActivity(ctx.activity, nameOfEvent, ctx.srv)
 		if err != nil {
 			return err
@@ -185,10 +187,9 @@ func commandHandler(command []string, ctx *gogendaContext) (err error) {
 		fmt.Println(" GoGenda helps you keep track of your activities")
 		displayInfoHeading(ctx, " = Commands = ")
 		fmt.Println("")
-		fmt.Println(" START WORK - Start a work related activity")
-		fmt.Println(` START ORGA - Start a organisation related activity - 
-		Reading articles, answering mails etc`)
-		fmt.Println(" START LUNCH - Start a lunch related activity")
+		for _, category := range ctx.configuration.Categories {
+			fmt.Println(" START " + category.Name + " - Add an event in " + category.Color)
+		}
 		fmt.Println(" STOP - Stop the current activity")
 		fmt.Println(" RENAME - Rename the current activity")
 		fmt.Println(" DELETE - Delete the current activity")
@@ -201,6 +202,8 @@ func commandHandler(command []string, ctx *gogendaContext) (err error) {
 }
 
 func main() {
+	usr, _ := user.Current()
+	userDir := usr.HomeDir
 
 	var ctx gogendaContext
 
@@ -214,7 +217,7 @@ func main() {
 	runningFlag := true
 	var currentActivity calendar.Event
 	ctx.activity = &currentActivity
-	b, err := ioutil.ReadFile("/etc/gogenda/credentials.json")
+	b, err := ioutil.ReadFile(userDir + "/.gogenda/credentials.json")
 	if err != nil {
 		log.Fatalf("Unable to read client secret file: %v", err)
 	}
@@ -229,6 +232,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("Unable to retrieve Calendar client: %v", err)
 	}
+
+	LoadConfiguration(userDir+"/.gogenda/config.json", &ctx)
 
 	for runningFlag {
 
