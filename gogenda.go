@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -72,20 +73,40 @@ func saveToken(path string, token *oauth2.Token) {
 	json.NewEncoder(f).Encode(token)
 }
 
-func insertActivity(name string, color string, srv *calendar.Service) (err error) {
+func insertActivity(name string, color string, srv *calendar.Service) (activity calendar.Event, err error) {
 	var newEvent calendar.Event
-	newEvent.Start.DateTime = time.Now().Format(time.RFC3339)
-	newEvent.ColorId = "11" // ???
+	var edtStart calendar.EventDateTime
+	var edtEnd calendar.EventDateTime
+	edtStart.DateTime = time.Now().Format(time.RFC3339)
+	edtEnd.DateTime = time.Now().Add(30 * time.Minute).Format(time.RFC3339)
+	newEvent.Start = &edtStart
+	newEvent.End = &edtEnd
+	switch color {
+	case "red":
+		newEvent.ColorId = "11"
+		break
+	case "yellow":
+		newEvent.ColorId = "5"
+		break
+	case "purple":
+		newEvent.ColorId = "3"
+		break
+	}
 	newEvent.Summary = name
-	srv.Events.Insert("primary", &newEvent)
-	return nil
+	call := srv.Events.Insert("primary", &newEvent)
+	actualEvent, err := call.Do()
+	newEvent.Id = actualEvent.Id
+	return newEvent, err
 }
 
 func stopActivity(activity *calendar.Event, srv *calendar.Service) (err error) {
-	activity.End.DateTime = time.Now().Format(time.RFC3339)
-	srv.Events.Update("primary", activity.Id, activity)
+	var edtEnd calendar.EventDateTime
+	edtEnd.DateTime = time.Now().Format(time.RFC3339)
+	activity.End = &edtEnd
+	call := srv.Events.Update("primary", activity.Id, activity)
+	_, err = call.Do()
 	activity = nil
-	return nil
+	return err
 }
 
 func commandHandler(command []string, activity *calendar.Event, srv *calendar.Service) (err error) {
@@ -93,28 +114,37 @@ func commandHandler(command []string, activity *calendar.Event, srv *calendar.Se
 	switch command[0] {
 	case "START":
 
-		var nameOfEvent string
 		fmt.Print("Enter name of event :  ")
-		fmt.Scan(&nameOfEvent)
+		scanner := bufio.NewScanner(os.Stdin)
+		if !scanner.Scan() {
+			return
+		}
+		nameOfEvent := scanner.Text()
 
 		if activity != nil {
 			// Stop the current activity
-			stopActivity(activity, srv)
+			err = stopActivity(activity, srv)
+			if err != nil {
+				fmt.Println("There was an issue deleting the current event.")
+			}
 		}
-		switch command[0] {
+		switch command[1] {
 		case "WORK":
-			insertActivity(nameOfEvent, "red", srv)
+			*activity, err = insertActivity(nameOfEvent, "red", srv)
 			break
 		case "VEILLE":
-			insertActivity(nameOfEvent, "yellow", srv)
+			*activity, err = insertActivity(nameOfEvent, "yellow", srv)
 			break
 		case "REPAS":
-			insertActivity(nameOfEvent, "purple", srv)
+			*activity, err = insertActivity(nameOfEvent, "purple", srv)
 			break
 		default:
 			return errors.New("I didnt recognised this activity")
 		}
-		print("Successfully added event ! Work hard! ")
+		if err != nil {
+			return err
+		}
+		fmt.Println("Successfully added event ! Work hard! ")
 		break
 	case "STOP":
 		if activity == nil {
@@ -125,7 +155,7 @@ func commandHandler(command []string, activity *calendar.Event, srv *calendar.Se
 		if err != nil {
 			return err
 		}
-		print("Successfully stopped the event ! I hope it went well ")
+		fmt.Println("Successfully stopped the event ! I hope it went well ")
 
 		break
 	}
@@ -167,16 +197,22 @@ func main() {
 
 	for runningFlag {
 
-		var userInput string
-		fmt.Print("> ")
-		fmt.Scan(&userInput)
-		userInput = strings.ToUpper(userInput)
-		command := strings.Split(userInput, " ")
-		fmt.Println(len(command))
+		scanner := bufio.NewScanner(os.Stdin)
+		var command []string
+		for len(command) == 0 {
+			fmt.Print("> ")
+			if !scanner.Scan() {
+				return
+			}
+			userInput := scanner.Text()
+			command = strings.Fields(userInput)
+			userInput = strings.ToUpper(userInput)
+		}
 
 		res := commandHandler(command, currentActivity, srv)
 		if res != nil {
 			println("There was an error " + res.Error())
 		}
 	}
+
 }
