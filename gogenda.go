@@ -24,7 +24,7 @@ SOFTWARE.
 /*
  ============= GOGENDA SOURCE CODE ===========
  @Description : GoGenda is a CLI for google agenda, to focus on one task at a time and logs your activity
- @Version : 0.1.1
+ @Version : 0.1.2
  @Author : Julien LE THENO
  =============================================
 */
@@ -40,30 +40,65 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fatih/color"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/calendar/v3"
 )
 
-const version = "0.1.1"
+const version = "0.1.2"
 
-func commandHandler(command []string, activity *calendar.Event, srv *calendar.Service) (err error) {
+type colors struct {
+	colorInfo        *color.Color
+	colorInfoHeading *color.Color
+	colorOk          *color.Color
+	colorError       *color.Color
+}
+
+type gogendaContext struct {
+	activity *calendar.Event
+	srv      *calendar.Service
+	colors   colors
+}
+
+func displayInfo(ctx *gogendaContext, str string) {
+	ctx.colors.colorInfo.Println(str)
+}
+func displayInfoNoNL(ctx *gogendaContext, str string) {
+	ctx.colors.colorInfo.Print(str)
+}
+func displayInfoHeading(ctx *gogendaContext, str string) {
+	ctx.colors.colorInfoHeading.Print(str)
+	fmt.Println() // Because the newline keeps the background color, we need to do it separately
+}
+func displayError(ctx *gogendaContext, str string) {
+	ctx.colors.colorError.Print(str)
+	fmt.Println()
+}
+func displayOk(ctx *gogendaContext, str string) {
+	ctx.colors.colorOk.Println(str)
+}
+func displayOkNoNL(ctx *gogendaContext, str string) {
+	ctx.colors.colorOk.Print(str)
+}
+
+func commandHandler(command []string, ctx *gogendaContext) (err error) {
 
 	switch strings.ToUpper(command[0]) {
 	case "START":
 		var nameOfEvent string
 		if len(command) == 2 {
-			fmt.Print("Enter name of event :  ")
+			displayInfoNoNL(ctx, "Enter name of event :  ")
 			scanner := bufio.NewScanner(os.Stdin)
 			if !scanner.Scan() {
 				return
 			}
 			nameOfEvent = scanner.Text()
 
-			if activity.Id != "" {
+			if ctx.activity.Id != "" {
 				// Stop the current activity
-				err = stopActivity(activity, srv)
+				err = stopActivity(ctx.activity, ctx.srv)
 				if err != nil {
-					fmt.Println("There was an issue deleting the current event.")
+					displayError(ctx, "There was an issue deleting the current event.")
 				}
 			}
 		} else {
@@ -72,13 +107,13 @@ func commandHandler(command []string, activity *calendar.Event, srv *calendar.Se
 
 		switch strings.ToUpper(command[1]) {
 		case "WORK":
-			*activity, err = insertActivity(nameOfEvent, "red", srv)
+			*ctx.activity, err = insertActivity(nameOfEvent, "red", ctx.srv)
 			break
 		case "ORGA":
-			*activity, err = insertActivity(nameOfEvent, "yellow", srv)
+			*ctx.activity, err = insertActivity(nameOfEvent, "yellow", ctx.srv)
 			break
 		case "LUNCH":
-			*activity, err = insertActivity(nameOfEvent, "purple", srv)
+			*ctx.activity, err = insertActivity(nameOfEvent, "purple", ctx.srv)
 			break
 		default:
 			return errors.New("I didnt recognised this activity")
@@ -86,59 +121,60 @@ func commandHandler(command []string, activity *calendar.Event, srv *calendar.Se
 		if err != nil {
 			return err
 		}
-		fmt.Println("Successfully added activity ! ")
+		displayOk(ctx, "Successfully added activity ! ")
 		break
 	case "STOP":
-		if activity.Id == "" {
+		if ctx.activity.Id == "" {
 			// Nothing to stop
 			return errors.New("Nothing to stop")
 		}
 
-		startTime, err := time.Parse(time.RFC3339, activity.Start.DateTime)
+		startTime, err := time.Parse(time.RFC3339, ctx.activity.Start.DateTime)
 		if err != nil {
 			return err
 		}
 		duration := time.Since(startTime)
-		fmt.Println("The activity '" + activity.Summary + "' lasted " + duration.Truncate(time.Second).String())
+		displayInfo(ctx, "The activity '"+ctx.activity.Summary+"' lasted "+duration.Truncate(time.Second).String())
 		if err != nil {
 			return err
 		}
-		err = stopActivity(activity, srv)
+		err = stopActivity(ctx.activity, ctx.srv)
 
-		fmt.Println("Successfully stopped the activity ! I hope it went well ")
+		displayOk(ctx, "Successfully stopped the activity ! I hope it went well ")
 		break
 	case "RENAME":
-		if activity.Id == "" {
+		if ctx.activity.Id == "" {
 			return errors.New("You dont have a current activity to rename")
 		}
-		fmt.Print("Enter name of event :  ")
+		displayInfoNoNL(ctx, "Enter name of event :  ")
 		scanner := bufio.NewScanner(os.Stdin)
 		if !scanner.Scan() {
 			return
 		}
 		nameOfEvent := scanner.Text()
 
-		err = renameActivity(activity, nameOfEvent, srv)
+		err = renameActivity(ctx.activity, nameOfEvent, ctx.srv)
 		if err != nil {
 			return err
 		}
-		fmt.Println("Successfully renamed the activity")
+		displayOk(ctx, "Successfully renamed the activity")
 		break
 	case "DELETE":
-		if activity.Id == "" {
+		if ctx.activity.Id == "" {
 			// Nothing to stop
 			return errors.New("Nothing to delete")
 		}
-		err = deleteActivity(activity, srv)
+		err = deleteActivity(ctx.activity, ctx.srv)
 		if err != nil {
 			return err
 		}
-		fmt.Println("Successfully deleted the activity ! I hope it went well ")
+		displayOk(ctx, "Successfully deleted the activity ! I hope it went well ")
 		break
 	case "HELP":
-		fmt.Println("== GoGenda ==")
+		displayInfoHeading(ctx, "== GoGenda ==")
 		fmt.Println(" GoGenda helps you keep track of your activities")
-		fmt.Println(" = Commands = ")
+		displayInfoHeading(ctx, " = Commands = ")
+		fmt.Println("")
 		fmt.Println(" START WORK - Start a work related activity")
 		fmt.Println(` START ORGA - Start a organisation related activity - 
 		Reading articles, answering mails etc`)
@@ -147,18 +183,27 @@ func commandHandler(command []string, activity *calendar.Event, srv *calendar.Se
 		fmt.Println(" RENAME - Rename the current activity")
 		fmt.Println(" DELETE - Delete the current activity")
 	default:
-		fmt.Println(command[0] + ": command not found")
+		displayError(ctx, command[0]+": command not found")
+
 	}
 
 	return nil
 }
 
 func main() {
-	fmt.Println("Welcome to GoGenda!")
-	fmt.Println("Version number : " + version)
+
+	var ctx gogendaContext
+
+	ctx.colors.colorInfo = color.New(color.FgBlue)
+	ctx.colors.colorInfoHeading = color.New(color.FgWhite).Add(color.BgBlue)
+	ctx.colors.colorOk = color.New(color.FgGreen)
+	ctx.colors.colorError = color.New(color.FgWhite).Add(color.BgHiRed)
+
+	displayInfoHeading(&ctx, "Welcome to GoGenda!")
+	displayInfo(&ctx, "Version number : "+version)
 	runningFlag := true
 	var currentActivity calendar.Event
-
+	ctx.activity = &currentActivity
 	b, err := ioutil.ReadFile("/etc/gogenda/credentials.json")
 	if err != nil {
 		log.Fatalf("Unable to read client secret file: %v", err)
@@ -170,7 +215,7 @@ func main() {
 	}
 	client := getClient(config)
 
-	srv, err := calendar.New(client)
+	ctx.srv, err = calendar.New(client)
 	if err != nil {
 		log.Fatalf("Unable to retrieve Calendar client: %v", err)
 	}
@@ -181,7 +226,9 @@ func main() {
 		var command []string
 		for len(command) == 0 {
 			if currentActivity.Id != "" {
-				fmt.Print("[" + currentActivity.Summary + "]")
+				fmt.Print("[")
+				displayOkNoNL(&ctx, currentActivity.Summary)
+				fmt.Print("]")
 			}
 			fmt.Print("> ")
 			if !scanner.Scan() {
@@ -191,16 +238,16 @@ func main() {
 			command = strings.Fields(userInput)
 		}
 		if strings.ToUpper(command[0]) == "EXIT" {
-			println("See you later !")
+			fmt.Println("See you later !")
 			if currentActivity.Id != "" {
-				stopActivity(&currentActivity, srv)
+				stopActivity(&currentActivity, ctx.srv)
 			}
 			runningFlag = false
 			break
 		}
-		res := commandHandler(command, &currentActivity, srv)
+		res := commandHandler(command, &ctx)
 		if res != nil {
-			println("There was an error " + res.Error())
+			displayError(&ctx, "ERROR : "+res.Error())
 		}
 	}
 
