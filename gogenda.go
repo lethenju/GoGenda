@@ -61,7 +61,8 @@ type gogendaContext struct {
 }
 
 func displayInfo(ctx *gogendaContext, str string) {
-	ctx.colors.colorInfo.Println(str)
+	ctx.colors.colorInfo.Print(str)
+	fmt.Println()
 }
 func displayInfoNoNL(ctx *gogendaContext, str string) {
 	ctx.colors.colorInfo.Print(str)
@@ -87,7 +88,7 @@ func commandHandler(command []string, ctx *gogendaContext) (err error) {
 	case "START":
 		var nameOfEvent string
 		if len(command) == 2 {
-			displayInfoNoNL(ctx, "Enter name of event :  ")
+			fmt.Print(ctx, "Enter name of event :")
 			scanner := bufio.NewScanner(os.Stdin)
 			if !scanner.Scan() {
 				return
@@ -146,7 +147,7 @@ func commandHandler(command []string, ctx *gogendaContext) (err error) {
 		if ctx.activity.Id == "" {
 			return errors.New("You dont have a current activity to rename")
 		}
-		displayInfoNoNL(ctx, "Enter name of event :  ")
+		fmt.Print(ctx, "Enter name of event :  ")
 		scanner := bufio.NewScanner(os.Stdin)
 		if !scanner.Scan() {
 			return
@@ -194,7 +195,7 @@ func main() {
 
 	var ctx gogendaContext
 
-	ctx.colors.colorInfo = color.New(color.FgBlue)
+	ctx.colors.colorInfo = color.New(color.FgBlue).Add(color.BgWhite)
 	ctx.colors.colorInfoHeading = color.New(color.FgWhite).Add(color.BgBlue)
 	ctx.colors.colorOk = color.New(color.FgGreen)
 	ctx.colors.colorError = color.New(color.FgWhite).Add(color.BgHiRed)
