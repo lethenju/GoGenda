@@ -141,10 +141,10 @@ func commandHandler(command []string, activity *calendar.Event, srv *calendar.Se
 		case "WORK":
 			*activity, err = insertActivity(nameOfEvent, "red", srv)
 			break
-		case "VEILLE":
+		case "ORGA":
 			*activity, err = insertActivity(nameOfEvent, "yellow", srv)
 			break
-		case "REPAS":
+		case "LUNCH":
 			*activity, err = insertActivity(nameOfEvent, "purple", srv)
 			break
 		default:
@@ -183,6 +183,17 @@ func commandHandler(command []string, activity *calendar.Event, srv *calendar.Se
 			return err
 		}
 		fmt.Println("Successfully renamed the activity")
+		break
+	case "HELP":
+		fmt.Println("== GoGenda ==")
+		fmt.Println(" GoGenda helps you keep track of your activities")
+		fmt.Println(" = Commands = ")
+		fmt.Println(" START WORK - start a work related activity")
+		fmt.Println(` START ORGA - start a organisation related activity - 
+		Reading articles, answering mails etc`)
+		fmt.Println(" START LUNCH - start a lunch related activity")
+		fmt.Println(" STOP - Stops the current activity")
+		fmt.Println(" RENAME - Renames the current activity")
 	}
 
 	return nil
@@ -208,8 +219,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("Unable to retrieve Calendar client: %v", err)
 	}
-
-	t := time.Now().Format(time.RFC3339)
 
 	for runningFlag {
 
