@@ -24,7 +24,6 @@ SOFTWARE.
 /*
  ============= GOGENDA SOURCE CODE ===========
  @Description : GoGenda is a CLI for google agenda, to focus on one task at a time and logs your activity
- @Version : 0.1.4
  @Author : Julien LE THENO
  =============================================
 */

@@ -24,7 +24,7 @@ SOFTWARE.
 /*
  ============= GOGENDA SOURCE CODE ===========
  @Description : GoGenda is a CLI for google agenda, to focus on one task at a time and logs your activity
- @Version : 0.1.4
+ @Version : 0.1.5
  @Author : Julien LE THENO
  =============================================
 */
@@ -36,11 +36,12 @@ import (
 	"os"
 	"os/user"
 	"strings"
+	"time"
 
 	"google.golang.org/api/calendar/v3"
 )
 
-const version = "0.1.4"
+const version = "0.1.5"
 
 type gogendaContext struct {
 	activity      *calendar.Event
@@ -93,14 +94,41 @@ func main() {
 	var ctx gogendaContext
 	setupColors(&ctx)
 
+	connect(&ctx)
 	displayInfoHeading(&ctx, "Welcome to GoGenda!")
 	displayInfo(&ctx, "Version number : "+version)
 	runningFlag := true
 	var currentActivity calendar.Event
-	ctx.activity = &currentActivity
-
+	t := time.Now().Format(time.RFC3339)
 	LoadConfiguration(userDir+"/.gogenda/config.json", &ctx)
+	events, err := ctx.srv.Events.List("primary").ShowDeleted(false).
+		SingleEvents(true).TimeMin(time.Now().Add(-1 * time.Hour).Format(time.RFC3339)).TimeMax(t).MaxResults(10).OrderBy("startTime").Do()
+	if err != nil {
+		displayError(&ctx, "ERROR : "+err.Error())
+		return
+	}
 
+	var selectedEvent calendar.Event
+	var oldTime calendar.EventDateTime
+	oldTime.DateTime = time.RFC3339
+	selectedEvent.Start = &oldTime
+	for _, event := range events.Items {
+		if event.Start.DateTime > selectedEvent.Start.DateTime {
+			selectedEvent = *event
+		}
+	}
+
+	fmt.Println("Last event : " + selectedEvent.Summary)
+	fmt.Println("Are you still doing that ? (y/n)")
+	userInput := ""
+	for userInput != "y" && userInput != "n" {
+		fmt.Scan(&userInput)
+	}
+	if userInput == "y" {
+		currentActivity = selectedEvent
+	}
+
+	ctx.activity = &currentActivity
 	for runningFlag {
 
 		scanner := bufio.NewScanner(os.Stdin)
