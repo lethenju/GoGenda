@@ -146,7 +146,7 @@ func main() {
 	displayInfoHeading(&ctx, "Welcome to GoGenda!")
 	displayInfo(&ctx, "Version number : "+version)
 	lastEvent, err := getLastEvent(&ctx)
-	if err == nil {
+	if err == nil && lastEvent.Id != "" {
 		fmt.Println("Last event : " + lastEvent.Summary)
 		fmt.Println("Are you still doing that ? (y/n)")
 		userInput := ""
