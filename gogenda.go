@@ -90,11 +90,8 @@ func commandHandler(command []string, ctx *gogendaContext) (err error) {
 func getLastEvent(ctx *gogendaContext) (calendar.Event, error) {
 
 	var selectedEvent calendar.Event
-	usr, _ := user.Current()
-	userDir := usr.HomeDir
 
 	t := time.Now().Format(time.RFC3339)
-	LoadConfiguration(userDir+"/.gogenda/config.json", ctx)
 	events, err := ctx.srv.Events.List("primary").ShowDeleted(false).
 		SingleEvents(true).TimeMin(time.Now().Add(-1 * time.Hour).Format(time.RFC3339)).TimeMax(t).MaxResults(10).OrderBy("startTime").Do()
 	if err != nil {
@@ -115,6 +112,9 @@ func getLastEvent(ctx *gogendaContext) (calendar.Event, error) {
 
 func main() {
 
+	usr, _ := user.Current()
+	userDir := usr.HomeDir
+
 	var ctx gogendaContext
 	setupColors(&ctx)
 
@@ -123,6 +123,8 @@ func main() {
 	var currentActivity calendar.Event
 
 	ctx.activity = &currentActivity
+
+	LoadConfiguration(userDir+"/.gogenda/config.json", &ctx)
 
 	args := os.Args
 	if len(args) > 1 {
