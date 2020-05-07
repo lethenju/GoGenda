@@ -35,6 +35,7 @@ import (
 	"fmt"
 	"os"
 	"os/user"
+	"runtime"
 	"strings"
 	"time"
 
@@ -129,10 +130,19 @@ func shell(ctx *gogendaContext) {
 			ctx.activity = &lastEvent
 		}
 	}
+	var userInput string
 
+	scanner := bufio.NewScanner(os.Stdin)
+
+	if runtime.GOOS == "windows" {
+		// Scan twice on windows because scanner is not empty at startup
+		if !scanner.Scan() {
+			return
+		}
+		userInput = scanner.Text()
+	}
 	for runningFlag {
 
-		scanner := bufio.NewScanner(os.Stdin)
 		var command []string
 		for len(command) == 0 {
 			if ctx.activity.Id != "" {
@@ -150,7 +160,8 @@ func shell(ctx *gogendaContext) {
 			if !scanner.Scan() {
 				return
 			}
-			userInput := scanner.Text()
+
+			userInput = scanner.Text()
 			command = strings.Fields(userInput)
 		}
 		if strings.ToUpper(command[0]) == "EXIT" {
