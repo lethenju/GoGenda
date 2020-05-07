@@ -1,5 +1,6 @@
-# GoGenda
+![](https://lethenju.github.io/res/logo_gogenda.png)
 
+# GoGenda
 
 A CLI application to quickly tell your google agenda what you're doing and let it logs your activity until you tell it to stop
 
