@@ -24,7 +24,7 @@ SOFTWARE.
 /*
  ============= GOGENDA SOURCE CODE ===========
  @Description : GoGenda is a CLI for google agenda, to focus on one task at a time and logs your activity
- @Version : 0.1.5
+ @Version : 0.1.6
  @Author : Julien LE THENO
  =============================================
 */
@@ -41,7 +41,7 @@ import (
 	"google.golang.org/api/calendar/v3"
 )
 
-const version = "0.1.5"
+const version = "0.1.6"
 
 type gogendaContext struct {
 	activity      *calendar.Event
@@ -79,6 +79,8 @@ func commandHandler(command []string, ctx *gogendaContext) (err error) {
 		break
 	case "HELP":
 		helpCommand(ctx)
+	case "VERSION":
+		displayInfo(ctx, "Gogenda (MIT) Version : "+version)
 	default:
 		displayError(ctx, command[0]+": command not found")
 
@@ -110,6 +112,63 @@ func getLastEvent(ctx *gogendaContext) (calendar.Event, error) {
 	return selectedEvent, nil
 }
 
+func shell(ctx *gogendaContext) {
+
+	runningFlag := true
+	displayInfoHeading(ctx, "Welcome to GoGenda!")
+	displayInfo(ctx, "Version number : "+version)
+	lastEvent, err := getLastEvent(ctx)
+	if err == nil && lastEvent.Id != "" {
+		fmt.Println("Last event : " + lastEvent.Summary)
+		fmt.Println("Are you still doing that ? (y/n)")
+		userInput := ""
+		for userInput != "y" && userInput != "n" {
+			fmt.Scan(&userInput)
+		}
+		if userInput == "y" {
+			ctx.activity = &lastEvent
+		}
+	}
+
+	for runningFlag {
+
+		scanner := bufio.NewScanner(os.Stdin)
+		var command []string
+		for len(command) == 0 {
+			if ctx.activity.Id != "" {
+				fmt.Print("[ ")
+				displayOkNoNL(ctx, ctx.activity.Summary+" ")
+				duration, err := getDuration(ctx.activity)
+				if err != nil {
+					displayError(ctx, "ERROR : "+err.Error())
+				}
+				displayInfoNoNL(ctx, duration)
+
+				fmt.Print(" ]")
+			}
+			fmt.Print("> ")
+			if !scanner.Scan() {
+				return
+			}
+			userInput := scanner.Text()
+			command = strings.Fields(userInput)
+		}
+		if strings.ToUpper(command[0]) == "EXIT" {
+			fmt.Println("See you later !")
+			if ctx.activity.Id != "" {
+				stopActivity(ctx.activity, ctx.srv)
+			}
+			runningFlag = false
+			break
+		}
+		res := commandHandler(command, ctx)
+		if res != nil {
+			displayError(ctx, "ERROR : "+res.Error())
+		}
+	}
+
+}
+
 func main() {
 
 	usr, _ := user.Current()
@@ -119,7 +178,6 @@ func main() {
 	setupColors(&ctx)
 
 	connect(&ctx)
-	runningFlag := true
 	var currentActivity calendar.Event
 
 	ctx.activity = &currentActivity
@@ -128,6 +186,17 @@ func main() {
 
 	args := os.Args
 	if len(args) > 1 {
+		// Launch shell based UI
+		if strings.ToUpper(args[1]) == "SHELL" || strings.ToUpper(args[1]) == "-SH" {
+			shell(&ctx)
+			return
+		}
+
+		if strings.ToUpper(args[1]) == "HELP" || strings.ToUpper(args[1]) == "--HELP" {
+			usageCommand(&ctx)
+			return
+		}
+
 		// For the other commands than start its obvious he/she is
 		if strings.ToUpper(args[1]) != "START" {
 			currentActivity, _ = getLastEvent(&ctx)
@@ -142,57 +211,5 @@ func main() {
 		}
 		return
 	}
-
-	displayInfoHeading(&ctx, "Welcome to GoGenda!")
-	displayInfo(&ctx, "Version number : "+version)
-	lastEvent, err := getLastEvent(&ctx)
-	if err == nil && lastEvent.Id != "" {
-		fmt.Println("Last event : " + lastEvent.Summary)
-		fmt.Println("Are you still doing that ? (y/n)")
-		userInput := ""
-		for userInput != "y" && userInput != "n" {
-			fmt.Scan(&userInput)
-		}
-		if userInput == "y" {
-			currentActivity = lastEvent
-		}
-	}
-
-	for runningFlag {
-
-		scanner := bufio.NewScanner(os.Stdin)
-		var command []string
-		for len(command) == 0 {
-			if currentActivity.Id != "" {
-				fmt.Print("[ ")
-				displayOkNoNL(&ctx, currentActivity.Summary+" ")
-				duration, err := getDuration(ctx.activity)
-				if err != nil {
-					displayError(&ctx, "ERROR : "+err.Error())
-				}
-				displayInfoNoNL(&ctx, duration)
-
-				fmt.Print(" ]")
-			}
-			fmt.Print("> ")
-			if !scanner.Scan() {
-				return
-			}
-			userInput := scanner.Text()
-			command = strings.Fields(userInput)
-		}
-		if strings.ToUpper(command[0]) == "EXIT" {
-			fmt.Println("See you later !")
-			if currentActivity.Id != "" {
-				stopActivity(&currentActivity, ctx.srv)
-			}
-			runningFlag = false
-			break
-		}
-		res := commandHandler(command, &ctx)
-		if res != nil {
-			displayError(&ctx, "ERROR : "+res.Error())
-		}
-	}
-
+	usageCommand(&ctx)
 }

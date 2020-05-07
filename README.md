@@ -7,10 +7,10 @@ In my opinion it is a good and easy way to stay productive by keeping on a task 
 
 ## Installation
 
-Install the app with :
+Install the app with 
 ```sh
 mkdir "~/.gogenda/"
-sudo GOBIN=/usr/local/bin/ go install
+sudo go install
 ```
 
 GoGenda uses the REST Api of Google Calendar.

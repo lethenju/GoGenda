@@ -137,9 +137,27 @@ func helpCommand(ctx *gogendaContext) {
 	displayInfoHeading(ctx, " = Commands = ")
 	fmt.Println("")
 	for _, category := range ctx.configuration.Categories {
-		fmt.Println(" START " + category.Name + " - Add an event in " + category.Color)
+		fmt.Println(" start " + category.Name + " - Add an event in " + category.Color)
 	}
-	fmt.Println(" STOP - Stop the current activity")
-	fmt.Println(" RENAME - Rename the current activity")
-	fmt.Println(" DELETE - Delete the current activity")
+	fmt.Println(" stop - Stop the current activity")
+	fmt.Println(" rename - Rename the current activity")
+	fmt.Println(" delete - Delete the current activity")
+	fmt.Println(" help - shows the help")
+	fmt.Println(" version - shows the current version")
+}
+
+func usageCommand(ctx *gogendaContext) {
+	displayInfoHeading(ctx, "== GoGenda Usage ==")
+	fmt.Println(" GoGenda helps you keep track of your activities")
+	displayInfoHeading(ctx, " = Commands = ")
+	fmt.Println("")
+	fmt.Println(" gogenda shell - Launch the shell UI")
+	for _, category := range ctx.configuration.Categories {
+		fmt.Println(" gogenda start " + category.Name + " - Add an event in " + category.Color)
+	}
+	fmt.Println(" gogenda stop - Stop the current activity")
+	fmt.Println(" gogenda rename - Rename the current activity")
+	fmt.Println(" gogenda delete - Delete the current activity")
+	fmt.Println(" gogenda help - shows the help")
+	fmt.Println(" gogenda version - shows the current version")
 }
