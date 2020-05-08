@@ -39,7 +39,14 @@ import (
 
 func startCommand(command []string, ctx *gogendaContext) (err error) {
 	var nameOfEvent string
-	if len(command) == 2 {
+	ourCategory := ConfigCategory{Name: "default", Color: "blue"}
+	for _, category := range ctx.configuration.Categories {
+		if strings.ToUpper(command[1]) == category.Name {
+			ourCategory = category
+		}
+	}
+	if len(command) == 2 && ourCategory.Name != "default" {
+		fmt.Print(command)
 		fmt.Print("Enter name of event :")
 		scanner := bufio.NewScanner(os.Stdin)
 		if !scanner.Scan() {
@@ -54,14 +61,10 @@ func startCommand(command []string, ctx *gogendaContext) (err error) {
 				displayError(ctx, "There was an issue deleting the current event.")
 			}
 		}
+	} else if len(command) == 2 {
+		nameOfEvent = strings.Join(command[1:], " ")
 	} else {
 		nameOfEvent = strings.Join(command[2:], " ")
-	}
-	ourCategory := ConfigCategory{Name: "default", Color: "blue"}
-	for _, category := range ctx.configuration.Categories {
-		if strings.ToUpper(command[1]) == category.Name {
-			ourCategory = category
-		}
 	}
 
 	*ctx.activity, err = insertActivity(nameOfEvent, ourCategory.Color, ctx.srv)
