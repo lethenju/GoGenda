@@ -193,8 +193,11 @@ func main() {
 
 	ctx.activity = &currentActivity
 
-	LoadConfiguration(userDir+"/.gogenda/config.json", &ctx)
-
+	err := LoadConfiguration(userDir+"/.gogenda/config.json", &ctx)
+	if err != nil {
+		// Conf doesnt exist
+		displayError(&ctx, "Could not open ~/.gogenda/config.json")
+	}
 	args := os.Args
 	if len(args) > 1 {
 		// Launch shell based UI
@@ -216,9 +219,9 @@ func main() {
 		// Need to make sure if the user thinks he/she's still going under the last event or not
 		// For now, lets suppose he/she doesnt. He/she should call stop first then start
 
-		res := commandHandler(args[1:], &ctx)
-		if res != nil {
-			displayError(&ctx, "ERROR : "+res.Error())
+		err := commandHandler(args[1:], &ctx)
+		if err != nil {
+			displayError(&ctx, "ERROR : "+err.Error())
 		}
 		return
 	}
