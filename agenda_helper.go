@@ -67,6 +67,7 @@ func insertActivity(name string, color string, srv *calendar.Service) (activity 
 		newEvent.ColorId = "7"
 		break
 	}
+	// No necessary default case as ColorId doesnt have to be set
 	newEvent.Summary = name
 	call := srv.Events.Insert("primary", &newEvent)
 	actualEvent, err := call.Do()
@@ -97,6 +98,13 @@ func renameActivity(activity *calendar.Event, text string, srv *calendar.Service
 	call := srv.Events.Update("primary", activity.Id, activity)
 	_, err = call.Do()
 	return err
+}
+
+func getActivitiesBetweenDates(beginDate string, endDate string, srv *calendar.Service) (cals calendar.Events, err error) {
+
+	events, err := srv.Events.List("primary").ShowDeleted(false).
+		SingleEvents(false).TimeMin(beginDate).TimeMax(endDate).MaxResults(256).OrderBy("startTime").Do()
+	return events, err
 }
 
 func getDuration(activity *calendar.Event) (string, error) {
