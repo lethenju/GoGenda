@@ -42,18 +42,26 @@ import (
 	"google.golang.org/api/calendar/v3"
 )
 
+// Version of the software
 const version = "0.1.6"
 
+// The gogendaContext type centralises every needed data of the application.
 type gogendaContext struct {
+	// Current activity 
 	activity      *calendar.Event
+	// The "service" of the calendar API, to able us to call API methods in Google Calendar's endpoint
 	srv           *calendar.Service
+	// set of colors (see colors.go) for coloured printing.
 	colors        colors
+	// The configuration with the categories of event and their appropriate colors
 	configuration Config
 }
 
+// The commandHandler takes the command in parameter and dispatchs it to the different command methods in command.go
 func commandHandler(command []string, ctx *gogendaContext) (err error) {
-
+	// Our command name is in the first argument
 	switch strings.ToUpper(command[0]) {
+		// Start an event
 	case "START":
 		err = startCommand(command, ctx)
 		if err != nil {
@@ -61,32 +69,38 @@ func commandHandler(command []string, ctx *gogendaContext) (err error) {
 		}
 		break
 	case "STOP":
+		// Stop an event
 		err = stopCommand(ctx)
 		if err != nil {
 			return err
 		}
 		break
 	case "RENAME":
+		// Renames an event
 		err = renameCommand(command, ctx)
 		if err != nil {
 			return err
 		}
 		break
 	case "DELETE":
+		// Deletes an event
 		err = deleteCommand(ctx)
 		if err != nil {
 			return err
 		}
 		break
 	case "PLAN":
+		// Show the plan of the date (or today if no date)
 		err = planCommand(command, ctx)
 		if err != nil {
 			return err
 		}
 		break
 	case "HELP":
+		// Show help
 		helpCommand(ctx)
 	case "VERSION":
+		// Display version
 		displayInfo(ctx, "Gogenda (MIT) Version : "+version)
 	default:
 		displayError(ctx, command[0]+": command not found")
@@ -96,6 +110,9 @@ func commandHandler(command []string, ctx *gogendaContext) (err error) {
 	return nil
 }
 
+// getLastEvent function gets the last event we set on google agenda today, in
+// order to ask the user if he's still doing that task or not
+// TODO : Use the newer getActivitiesBetweenDates instead
 func getLastEvent(ctx *gogendaContext) (calendar.Event, error) {
 
 	var selectedEvent calendar.Event
@@ -119,11 +136,14 @@ func getLastEvent(ctx *gogendaContext) (calendar.Event, error) {
 	return selectedEvent, nil
 }
 
+// Gogenda can be called as a shell, to have a shell like environement for long periods of usage
 func shell(ctx *gogendaContext) {
 
 	runningFlag := true
 	displayInfoHeading(ctx, "Welcome to GoGenda!")
 	displayInfo(ctx, "Version number : "+version)
+
+	// Asking the user if he's still doing the last event on google agenda
 	lastEvent, err := getLastEvent(ctx)
 	if err == nil && lastEvent.Id != "" {
 		fmt.Println("Last event : " + lastEvent.Summary)
@@ -147,6 +167,8 @@ func shell(ctx *gogendaContext) {
 		}
 		userInput = scanner.Text()
 	}
+
+	// Main loop
 	for runningFlag {
 
 		var command []string
@@ -186,14 +208,16 @@ func shell(ctx *gogendaContext) {
 
 }
 
+// Main entry point
 func main() {
 
 	usr, _ := user.Current()
 	userDir := usr.HomeDir
 
 	var ctx gogendaContext
+	// Setup colors printing 
 	setupColors(&ctx)
-
+	// Connect to API
 	connect(&ctx)
 	var currentActivity calendar.Event
 
@@ -221,10 +245,6 @@ func main() {
 		if strings.ToUpper(args[1]) != "START" {
 			currentActivity, _ = getLastEvent(&ctx)
 		}
-		// for the START command :
-		// Need to make sure if the user thinks he/she's still going under the last event or not
-		// For now, lets suppose he/she doesnt. He/she should call stop first then start
-
 		err := commandHandler(args[1:], &ctx)
 		if err != nil {
 			displayError(&ctx, "ERROR : "+err.Error())
