@@ -78,6 +78,12 @@ func commandHandler(command []string, ctx *gogendaContext) (err error) {
 			return err
 		}
 		break
+	case "PLAN":
+		err = planCommand(command, ctx)
+		if err != nil {
+			return err
+		}
+		break
 	case "HELP":
 		helpCommand(ctx)
 	case "VERSION":

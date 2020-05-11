@@ -36,8 +36,6 @@ import (
 	"os"
 	"strings"
 	"time"
-
-	"google.golang.org/api/calendar/v3"
 )
 
 func startCommand(command []string, ctx *gogendaContext) (err error) {
@@ -137,19 +135,33 @@ func renameCommand(command []string, ctx *gogendaContext) (err error) {
 	return nil
 }
 
-func planCommand(command []string, ctx *gogendaContext) (cals calendar.Events, err error) {
+func planCommand(command []string, ctx *gogendaContext) (err error) {
 	// Get plan of all day
 	begin := time.Now()
 	begin = time.Date(begin.Year(), begin.Month(), begin.Day(), 0, 0, 0, 0, time.Local)
 	end := time.Now()
 	end = time.Date(begin.Year(), begin.Month(), begin.Day(), 23, 59, 59, 0, time.Local)
-
-	if strings.ToUpper(command[1]) == "tommorow" {
-		begin = begin.Add(24 * time.Hour)
-		end = begin.Add(24 * time.Hour)
+	if len(command) > 1 {
+		if strings.ToUpper(command[1]) == "tommorow" {
+			begin = begin.Add(24 * time.Hour)
+			end = begin.Add(24 * time.Hour)
+		}
 	}
-	cals, err = getActivitiesBetweenDates(begin.Format(time.RFC3339), end.Format(time.RFC3339), ctx.srv)
-	return cals, err
+
+	cals, err := getActivitiesBetweenDates(begin.Format(time.RFC3339), end.Format(time.RFC3339), ctx.srv)
+	displayInfoHeading(ctx, " Events of "+begin.Format(time.RFC822))
+	if cals == nil {
+		displayError(ctx, "Error")
+		return err
+	}
+	events := cals.Items
+	for _, event := range events {
+		beginTime, _ := time.Parse(time.RFC3339, event.Start.DateTime)
+		endTime, _ := time.Parse(time.RFC3339, event.End.DateTime)
+
+		displayOk(ctx, " [ "+beginTime.Format(time.RFC822)+" -> "+endTime.Format(time.RFC822)+" ] : "+event.Summary)
+	}
+	return err
 }
 
 func helpCommand(ctx *gogendaContext) {

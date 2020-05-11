@@ -100,10 +100,10 @@ func renameActivity(activity *calendar.Event, text string, srv *calendar.Service
 	return err
 }
 
-func getActivitiesBetweenDates(beginDate string, endDate string, srv *calendar.Service) (cals calendar.Events, err error) {
+func getActivitiesBetweenDates(beginDate string, endDate string, srv *calendar.Service) (cals *calendar.Events, err error) {
 
 	events, err := srv.Events.List("primary").ShowDeleted(false).
-		SingleEvents(false).TimeMin(beginDate).TimeMax(endDate).MaxResults(256).OrderBy("startTime").Do()
+		SingleEvents(true).TimeMin(beginDate).TimeMax(endDate).MaxResults(64).OrderBy("startTime").Do()
 	return events, err
 }
 
