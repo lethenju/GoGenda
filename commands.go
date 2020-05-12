@@ -218,20 +218,27 @@ func addCommand(command []string, ctx *gogendaContext) (err error) {
 }
 
 // Print usage
-func helpCommand(ctx *gogendaContext) {
+func helpCommand(ctx *gogendaContext, isShell bool) {
 	displayInfoHeading(ctx, "== GoGenda ==")
 	fmt.Println(" GoGenda helps you keep track of your activities")
 	displayInfoHeading(ctx, " = Commands = ")
-	fmt.Println("")
-	fmt.Println(" gogenda shell - Launch the shell UI")
-	for _, category := range ctx.configuration.Categories {
-		fmt.Println(" gogenda start " + category.Name + " - Add an event in " + category.Color)
+	prefix := ""
+	if !isShell {
+		prefix = " gogenda"
 	}
-	fmt.Println(" gogenda stop - Stop the current activity")
-	fmt.Println(" gogenda rename - Rename the current activity")
-	fmt.Println(" gogenda delete - Delete the current activity")
-	fmt.Println(" plan (today / tommorow / yyyy-mm-dd / mm-dd) - shows events of the day")
-	fmt.Println(" add - add an event to the planning")
-	fmt.Println(" gogenda help - shows the help")
-	fmt.Println(" gogenda version - shows the current version")
+	fmt.Println("")
+	if !isShell {
+		fmt.Println(" gogenda shell - Launch the shell UI")
+
+	}
+	for _, category := range ctx.configuration.Categories {
+		fmt.Println(prefix + " start " + category.Name + " - Add an event in " + category.Color)
+	}
+	fmt.Println(prefix + " stop - Stop the current activity")
+	fmt.Println(prefix + " rename - Rename the current activity")
+	fmt.Println(prefix + " delete - Delete the current activity")
+	fmt.Println(prefix + " plan (today / tommorow / yyyy-mm-dd / mm-dd) - shows events of the day")
+	fmt.Println(prefix + " add - add an event to the planning")
+	fmt.Println(prefix + " help - shows the help")
+	fmt.Println(prefix + " version - shows the current version")
 }
