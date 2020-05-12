@@ -32,6 +32,7 @@ package main
 import (
 	"encoding/json"
 	"os"
+	"strings"
 )
 
 // ConfigCategory is a category of activity
@@ -60,4 +61,15 @@ func LoadConfiguration(file string, ctx *gogendaContext) error {
 	err = json.NewDecoder(f).Decode(configuration)
 	ctx.configuration = *configuration
 	return err
+}
+
+func confGetColorForName(name string, conf Config) (color string) {
+
+	ourCategory := ConfigCategory{Name: "default", Color: "blue"}
+	for _, category := range conf.Categories {
+		if strings.ToUpper(name) == category.Name {
+			ourCategory = category
+		}
+	}
+	return ourCategory.Color
 }

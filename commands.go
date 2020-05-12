@@ -68,7 +68,7 @@ func startCommand(command []string, ctx *gogendaContext) (err error) {
 		nameOfEvent = strings.Join(command[2:], " ")
 	}
 
-	*ctx.activity, err = insertActivity(nameOfEvent, ourCategory.Color, ctx.srv)
+	*ctx.activity, err = insertActivity(nameOfEvent, ourCategory.Color, time.Now(), time.Now().Add(30*time.Minute), ctx.srv)
 
 	if err != nil {
 		return err
@@ -162,17 +162,86 @@ func planCommand(command []string, ctx *gogendaContext) (err error) {
 }
 
 func addCommand(command []string, ctx *gogendaContext) (err error) {
+	var date time.Time
+	var endDate time.Time
+
+	var name string
+	var category string
 	if len(command) == 1 {
 		// No arguments given, we're gonna ask the user everything
-		fmt.Print("Enter date of event :")
-		//scanner := bufio.NewScanner(os.Stdin)
-		//if !scanner.Scan() {
-		//	return
-		//}
-		//dateStr := scanner.Text()
-		//date, err := dateParser(dateStr)
+		askAgain := true
+		scanner := bufio.NewScanner(os.Stdin)
+
+		for askAgain {
+			fmt.Print("Enter date of event :")
+			if !scanner.Scan() {
+				return
+			}
+			inputStr := scanner.Text()
+			date, err = dateParser(inputStr)
+			if err != nil {
+				displayError(ctx, "Wrong formatting !")
+			} else {
+				askAgain = false
+			}
+		}
+
+		askAgain = true
+		for askAgain {
+			fmt.Print("Enter begin time of event :")
+			if !scanner.Scan() {
+				return
+			}
+			inputStr := scanner.Text()
+			t, err := timeParser(inputStr)
+			if err != nil {
+				displayError(ctx, "Wrong formatting !")
+			} else {
+				date = time.Date(date.Year(), date.Month(), date.Day(), t.Hour(), t.Minute(), t.Second(), 0, time.Local)
+				askAgain = false
+			}
+		}
+
+		askAgain = true
+		for askAgain {
+			fmt.Print("Enter end time of event :")
+			if !scanner.Scan() {
+				return
+			}
+			inputStr := scanner.Text()
+			t, err := timeParser(inputStr)
+			if err != nil {
+				displayError(ctx, "Wrong formatting !")
+			} else {
+				endDate = time.Date(date.Year(), date.Month(), date.Day(), t.Hour(), t.Minute(), t.Second(), 0, time.Local)
+				if !endDate.After(date) {
+					displayError(ctx, "End time cannot be before start time !")
+				} else {
+					askAgain = false
+				}
+			}
+		}
+
+		fmt.Print("Enter name of event :")
+		if !scanner.Scan() {
+			return
+		}
+		name = scanner.Text()
+
+		fmt.Print("Enter type of event :")
+		if !scanner.Scan() {
+			return
+		}
+		category = scanner.Text()
+		fmt.Println()
 	}
-	return nil
+
+	color := confGetColorForName(category, ctx.configuration)
+	_, err = insertActivity(name, color, date, endDate, ctx.srv)
+	if err != nil {
+		displayError(ctx, err.Error())
+	}
+	return err
 }
 
 // Print usage

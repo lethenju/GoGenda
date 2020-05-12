@@ -36,16 +36,16 @@ import (
 )
 
 // Inserts an activity in the agenda
-// with the name of the event and the color of the event you want
+// with the name of the event and the color of the event you want, the start and end time
 // colors can be : "red", "yellow", "purple", "orange", "blue"
 // Also give a pointer the the calendar service in order to send the api.
 // It will return, if it succeeds, the event created, and an error code in case it fails.
-func insertActivity(name string, color string, srv *calendar.Service) (activity calendar.Event, err error) {
+func insertActivity(name string, color string, beginTime time.Time, endTime time.Time, srv *calendar.Service) (activity calendar.Event, err error) {
 	var newEvent calendar.Event
 	var edtStart calendar.EventDateTime
 	var edtEnd calendar.EventDateTime
-	edtStart.DateTime = time.Now().Format(time.RFC3339)
-	edtEnd.DateTime = time.Now().Add(30 * time.Minute).Format(time.RFC3339)
+	edtStart.DateTime = beginTime.Format(time.RFC3339)
+	edtEnd.DateTime = endTime.Format(time.RFC3339)
 	newEvent.Start = &edtStart
 	newEvent.End = &edtEnd
 	// 1 is lavender
