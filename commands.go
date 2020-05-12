@@ -34,7 +34,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -141,21 +140,7 @@ func planCommand(command []string, ctx *gogendaContext) (err error) {
 	begin := time.Now()
 	begin = time.Date(begin.Year(), begin.Month(), begin.Day(), 0, 0, 0, 0, time.Local)
 	if len(command) > 1 {
-		if strings.ToUpper(command[1]) == "TOMMOROW" {
-			begin = begin.Add(24 * time.Hour)
-		} else {
-			// Try to parse the date directly
-			begin, err = time.Parse("2006-01-02", command[1])
-			if err != nil {
-				// If the user only set the month and the day
-				// append the current year and try conversion
-				command[1] = strconv.Itoa(time.Now().Year()) + "-" + command[1]
-				begin, err = time.Parse("2006-01-02", command[1])
-				if err != nil {
-					return errors.New("Wrong date formating")
-				}
-			}
-		}
+		begin, err = dateParser(command[1])
 	}
 
 	end := time.Date(begin.Year(), begin.Month(), begin.Day(), 23, 59, 59, 0, time.Local)
@@ -176,6 +161,20 @@ func planCommand(command []string, ctx *gogendaContext) (err error) {
 	return err
 }
 
+func addCommand(command []string, ctx *gogendaContext) (err error) {
+	if len(command) == 1 {
+		// No arguments given, we're gonna ask the user everything
+		fmt.Print("Enter date of event :")
+		//scanner := bufio.NewScanner(os.Stdin)
+		//if !scanner.Scan() {
+		//	return
+		//}
+		//dateStr := scanner.Text()
+		//date, err := dateParser(dateStr)
+	}
+	return nil
+}
+
 // Print usage
 func helpCommand(ctx *gogendaContext) {
 	displayInfoHeading(ctx, "== GoGenda ==")
@@ -189,7 +188,8 @@ func helpCommand(ctx *gogendaContext) {
 	fmt.Println(" gogenda stop - Stop the current activity")
 	fmt.Println(" gogenda rename - Rename the current activity")
 	fmt.Println(" gogenda delete - Delete the current activity")
-	fmt.Println(" plan (today / tommorow / yyyy-mm-dd / mm-dd) shows events of the day")
+	fmt.Println(" plan (today / tommorow / yyyy-mm-dd / mm-dd) - shows events of the day")
+	fmt.Println(" add - add an even to the planning")
 	fmt.Println(" gogenda help - shows the help")
 	fmt.Println(" gogenda version - shows the current version")
 }

@@ -96,6 +96,13 @@ func commandHandler(command []string, ctx *gogendaContext) (err error) {
 			return err
 		}
 		break
+	case "ADD":
+		// add an event to the calendar at a specific date
+		err = addCommand(command, ctx)
+		if err != nil {
+			return err
+		}
+		break
 	case "HELP":
 		// Show help
 		helpCommand(ctx)
