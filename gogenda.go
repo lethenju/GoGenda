@@ -43,7 +43,7 @@ import (
 )
 
 // Version of the software
-const version = "0.1.6"
+const version = "0.1.7"
 
 // The gogendaContext type centralises every needed data of the application.
 type gogendaContext struct {

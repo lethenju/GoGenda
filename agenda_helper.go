@@ -30,6 +30,7 @@ SOFTWARE.
 package main
 
 import (
+	"errors"
 	"time"
 
 	"google.golang.org/api/calendar/v3"
@@ -131,4 +132,37 @@ func getDuration(activity *calendar.Event) (string, error) {
 	}
 	duration := time.Since(startTime)
 	return duration.Truncate(time.Second).String(), nil
+}
+
+func getColorIDFromColorName(colorName string) (colorID string, err error) {
+	switch colorName {
+	case "red":
+		return "11", nil
+	case "yellow":
+		return "5", nil
+	case "purple":
+		return "3", nil
+	case "orange":
+		return "6", nil
+	case "blue":
+		return "7", nil
+	}
+	return "", errors.New("Didnt find color")
+}
+
+// Get the string color equivalent for a google agenda colorId
+func getColorNameFromColorID(colorID string) (colorName string, err error) {
+	switch colorID {
+	case "11":
+		return "red", nil
+	case "5":
+		return "yellow", nil
+	case "3":
+		return "purple", nil
+	case "6":
+		return "orange", nil
+	case "7":
+		return "blue", nil
+	}
+	return "", errors.New("Didnt find color")
 }

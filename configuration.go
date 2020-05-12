@@ -63,7 +63,7 @@ func LoadConfiguration(file string, ctx *gogendaContext) error {
 	return err
 }
 
-func confGetColorForName(name string, conf Config) (color string) {
+func confGetColorFromName(name string, conf Config) (color string) {
 
 	ourCategory := ConfigCategory{Name: "default", Color: "blue"}
 	for _, category := range conf.Categories {
@@ -72,4 +72,14 @@ func confGetColorForName(name string, conf Config) (color string) {
 		}
 	}
 	return ourCategory.Color
+}
+
+func confGetNameFromColor(color string, conf Config) (name string) {
+	ourCategory := ConfigCategory{Name: "default", Color: "blue"}
+	for _, category := range conf.Categories {
+		if color == category.Color {
+			ourCategory = category
+		}
+	}
+	return ourCategory.Name
 }

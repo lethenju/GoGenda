@@ -41,7 +41,7 @@ import (
 // Add an event now
 func startCommand(command []string, ctx *gogendaContext) (err error) {
 	var nameOfEvent string
-	color := confGetColorForName(command[1], ctx.configuration)
+	color := confGetColorFromName(command[1], ctx.configuration)
 	if len(command) == 2 && color != "blue" {
 		fmt.Print(command)
 		fmt.Print("Enter name of event :")
@@ -151,8 +151,13 @@ func planCommand(command []string, ctx *gogendaContext) (err error) {
 	for _, event := range events {
 		beginTime, _ := time.Parse(time.RFC3339, event.Start.DateTime)
 		endTime, _ := time.Parse(time.RFC3339, event.End.DateTime)
+		color, err := getColorNameFromColorID(event.ColorId)
+		if err != nil {
+			return err
+		}
+		category := confGetNameFromColor(color, ctx.configuration)
 
-		displayOk(ctx, " [ "+beginTime.Format(time.RFC822)+" -> "+endTime.Format(time.RFC822)+" ] : "+event.Summary)
+		displayOk(ctx, " [ "+beginTime.Format("15:04")+" -> "+endTime.Format("15:04")+" ] ["+category+"] :"+event.Summary)
 	}
 	return err
 }
@@ -209,7 +214,7 @@ func addCommand(command []string, ctx *gogendaContext) (err error) {
 		category = inputFromUser("category of event")
 	}
 
-	color := confGetColorForName(category, ctx.configuration)
+	color := confGetColorFromName(category, ctx.configuration)
 	_, err = insertActivity(name, color, date, endDate, ctx.srv)
 	if err != nil {
 		displayError(ctx, err.Error())
