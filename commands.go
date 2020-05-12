@@ -38,6 +38,7 @@ import (
 	"time"
 )
 
+// Add an event now
 func startCommand(command []string, ctx *gogendaContext) (err error) {
 	var nameOfEvent string
 	color := confGetColorForName(command[1], ctx.configuration)
@@ -156,6 +157,8 @@ func planCommand(command []string, ctx *gogendaContext) (err error) {
 	return err
 }
 
+// Add an event sometime
+// If you want to add it now, you better use startCommand
 func addCommand(command []string, ctx *gogendaContext) (err error) {
 	var date time.Time
 	var endDate time.Time
@@ -253,7 +256,7 @@ func helpCommand(ctx *gogendaContext) {
 	fmt.Println(" gogenda rename - Rename the current activity")
 	fmt.Println(" gogenda delete - Delete the current activity")
 	fmt.Println(" plan (today / tommorow / yyyy-mm-dd / mm-dd) - shows events of the day")
-	fmt.Println(" add - add an even to the planning")
+	fmt.Println(" add - add an event to the planning")
 	fmt.Println(" gogenda help - shows the help")
 	fmt.Println(" gogenda version - shows the current version")
 }
