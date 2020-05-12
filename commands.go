@@ -142,7 +142,7 @@ func planCommand(command []string, ctx *gogendaContext) (err error) {
 	end := time.Now()
 	end = time.Date(begin.Year(), begin.Month(), begin.Day(), 23, 59, 59, 0, time.Local)
 	if len(command) > 1 {
-		if strings.ToUpper(command[1]) == "tommorow" {
+		if strings.ToUpper(command[1]) == "TOMMOROW" {
 			begin = begin.Add(24 * time.Hour)
 			end = begin.Add(24 * time.Hour)
 		}
