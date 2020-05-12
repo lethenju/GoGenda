@@ -61,7 +61,7 @@ func dateParser(dateToParse string) (date time.Time, err error) {
 	}
 	date, err = time.Parse("01-02", dateToParse)
 	if err == nil {
-		return date, nil
+		return time.Date(time.Now().Year(), date.Month(), date.Day(), 0, 0, 0, 0, time.Local), nil
 	}
 	date, err = time.Parse("2006/01/02", dateToParse)
 	if err == nil {
@@ -69,7 +69,7 @@ func dateParser(dateToParse string) (date time.Time, err error) {
 	}
 	date, err = time.Parse("01/02", dateToParse)
 	if err == nil {
-		return date, nil
+		return time.Date(time.Now().Year(), date.Month(), date.Day(), 0, 0, 0, 0, time.Local), nil
 	}
 	return time.Now(), errors.New("Wrong formatting")
 }

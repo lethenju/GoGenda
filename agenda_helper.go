@@ -164,5 +164,5 @@ func getColorNameFromColorID(colorID string) (colorName string, err error) {
 	case "7":
 		return "blue", nil
 	}
-	return "", errors.New("Didnt find color")
+	return "7", errors.New("Didnt find color")
 }

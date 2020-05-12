@@ -151,10 +151,7 @@ func planCommand(command []string, ctx *gogendaContext) (err error) {
 	for _, event := range events {
 		beginTime, _ := time.Parse(time.RFC3339, event.Start.DateTime)
 		endTime, _ := time.Parse(time.RFC3339, event.End.DateTime)
-		color, err := getColorNameFromColorID(event.ColorId)
-		if err != nil {
-			return err
-		}
+		color, _ := getColorNameFromColorID(event.ColorId)
 		category := confGetNameFromColor(color, ctx.configuration)
 		if category == "default" {
 			category = ""
