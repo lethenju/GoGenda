@@ -41,7 +41,7 @@ import (
 func startCommand(command []string, ctx *gogendaContext) (err error) {
 	var nameOfEvent string
 	color := confGetColorForName(command[1], ctx.configuration)
-	if len(command) == 2 && ourCategory.Name != "default" {
+	if len(command) == 2 && color != "blue" {
 		fmt.Print(command)
 		fmt.Print("Enter name of event :")
 		scanner := bufio.NewScanner(os.Stdin)
