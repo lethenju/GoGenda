@@ -34,6 +34,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -139,14 +140,25 @@ func planCommand(command []string, ctx *gogendaContext) (err error) {
 	// Get plan of all day
 	begin := time.Now()
 	begin = time.Date(begin.Year(), begin.Month(), begin.Day(), 0, 0, 0, 0, time.Local)
-	end := time.Now()
-	end = time.Date(begin.Year(), begin.Month(), begin.Day(), 23, 59, 59, 0, time.Local)
 	if len(command) > 1 {
 		if strings.ToUpper(command[1]) == "TOMMOROW" {
 			begin = begin.Add(24 * time.Hour)
-			end = begin.Add(24 * time.Hour)
+		} else {
+			// Try to parse the date directly
+			begin, err = time.Parse("2006-01-02", command[1])
+			if err != nil {
+				// If the user only set the month and the day
+				// append the current year and try conversion
+				command[1] = strconv.Itoa(time.Now().Year()) + "-" + command[1]
+				begin, err = time.Parse("2006-01-02", command[1])
+				if err != nil {
+					return errors.New("Wrong date formating")
+				}
+			}
 		}
 	}
+
+	end := time.Date(begin.Year(), begin.Month(), begin.Day(), 23, 59, 59, 0, time.Local)
 
 	cals, err := getActivitiesBetweenDates(begin.Format(time.RFC3339), end.Format(time.RFC3339), ctx.srv)
 	displayInfoHeading(ctx, " Events of "+begin.Format(time.RFC822))
@@ -177,7 +189,7 @@ func helpCommand(ctx *gogendaContext) {
 	fmt.Println(" gogenda stop - Stop the current activity")
 	fmt.Println(" gogenda rename - Rename the current activity")
 	fmt.Println(" gogenda delete - Delete the current activity")
-	fmt.Println(" plan (today/tommorow) shows events of the day")
+	fmt.Println(" plan (today / tommorow / yyyy-mm-dd / mm-dd) shows events of the day")
 	fmt.Println(" gogenda help - shows the help")
 	fmt.Println(" gogenda version - shows the current version")
 }
