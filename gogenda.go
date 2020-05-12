@@ -47,12 +47,12 @@ const version = "0.1.6"
 
 // The gogendaContext type centralises every needed data of the application.
 type gogendaContext struct {
-	// Current activity 
-	activity      *calendar.Event
+	// Current activity
+	activity *calendar.Event
 	// The "service" of the calendar API, to able us to call API methods in Google Calendar's endpoint
-	srv           *calendar.Service
+	srv *calendar.Service
 	// set of colors (see colors.go) for coloured printing.
-	colors        colors
+	colors colors
 	// The configuration with the categories of event and their appropriate colors
 	configuration Config
 }
@@ -61,7 +61,7 @@ type gogendaContext struct {
 func commandHandler(command []string, ctx *gogendaContext) (err error) {
 	// Our command name is in the first argument
 	switch strings.ToUpper(command[0]) {
-		// Start an event
+	// Start an event
 	case "START":
 		err = startCommand(command, ctx)
 		if err != nil {
@@ -215,7 +215,7 @@ func main() {
 	userDir := usr.HomeDir
 
 	var ctx gogendaContext
-	// Setup colors printing 
+	// Setup colors printing
 	setupColors(&ctx)
 	// Connect to API
 	connect(&ctx)
@@ -237,7 +237,7 @@ func main() {
 		}
 
 		if strings.ToUpper(args[1]) == "HELP" || strings.ToUpper(args[1]) == "--HELP" {
-			usageCommand(&ctx)
+			helpCommand(&ctx)
 			return
 		}
 
@@ -251,5 +251,5 @@ func main() {
 		}
 		return
 	}
-	usageCommand(&ctx)
+	helpCommand(&ctx)
 }

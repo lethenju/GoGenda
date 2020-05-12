@@ -164,26 +164,9 @@ func planCommand(command []string, ctx *gogendaContext) (err error) {
 	return err
 }
 
-// show help
+// Print usage
 func helpCommand(ctx *gogendaContext) {
 	displayInfoHeading(ctx, "== GoGenda ==")
-	fmt.Println(" GoGenda helps you keep track of your activities")
-	displayInfoHeading(ctx, " = Commands = ")
-	fmt.Println("")
-	for _, category := range ctx.configuration.Categories {
-		fmt.Println(" start " + category.Name + " - Add an event in " + category.Color)
-	}
-	fmt.Println(" stop - Stop the current activity")
-	fmt.Println(" rename - Rename the current activity")
-	fmt.Println(" delete - Delete the current activity")
-	fmt.Println(" plan (today/tommorow) shows events of the day")
-	fmt.Println(" help - shows the help")
-	fmt.Println(" version - shows the current version")
-}
-
-// Print usage
-func usageCommand(ctx *gogendaContext) {
-	displayInfoHeading(ctx, "== GoGenda Usage ==")
 	fmt.Println(" GoGenda helps you keep track of your activities")
 	displayInfoHeading(ctx, " = Commands = ")
 	fmt.Println("")
@@ -194,6 +177,7 @@ func usageCommand(ctx *gogendaContext) {
 	fmt.Println(" gogenda stop - Stop the current activity")
 	fmt.Println(" gogenda rename - Rename the current activity")
 	fmt.Println(" gogenda delete - Delete the current activity")
+	fmt.Println(" plan (today/tommorow) shows events of the day")
 	fmt.Println(" gogenda help - shows the help")
 	fmt.Println(" gogenda version - shows the current version")
 }
