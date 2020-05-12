@@ -156,8 +156,12 @@ func planCommand(command []string, ctx *gogendaContext) (err error) {
 			return err
 		}
 		category := confGetNameFromColor(color, ctx.configuration)
-
-		displayOk(ctx, " [ "+beginTime.Format("15:04")+" -> "+endTime.Format("15:04")+" ] ["+category+"] :"+event.Summary)
+		if category == "default" {
+			category = ""
+		}
+		category += "]"
+		category = fmt.Sprintf("[%-6s", category)
+		displayOk(ctx, " [ "+beginTime.Format("15:04")+" -> "+endTime.Format("15:04")+" ] "+category+" : "+event.Summary)
 	}
 	return err
 }
