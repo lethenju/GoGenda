@@ -168,14 +168,8 @@ func addCommand(command []string, ctx *gogendaContext) (err error) {
 	if len(command) == 1 {
 		// No arguments given, we're gonna ask the user everything
 		askAgain := true
-		scanner := bufio.NewScanner(os.Stdin)
-
 		for askAgain {
-			fmt.Print("Enter date of event :")
-			if !scanner.Scan() {
-				return
-			}
-			inputStr := scanner.Text()
+			inputStr := inputFromUser("date of event")
 			date, err = dateParser(inputStr)
 			if err != nil {
 				displayError(ctx, "Wrong formatting !")
@@ -186,11 +180,7 @@ func addCommand(command []string, ctx *gogendaContext) (err error) {
 
 		askAgain = true
 		for askAgain {
-			fmt.Print("Enter begin time of event :")
-			if !scanner.Scan() {
-				return
-			}
-			inputStr := scanner.Text()
+			inputStr := inputFromUser("begin time of event")
 			t, err := timeParser(inputStr)
 			if err != nil {
 				displayError(ctx, "Wrong formatting !")
@@ -202,11 +192,7 @@ func addCommand(command []string, ctx *gogendaContext) (err error) {
 
 		askAgain = true
 		for askAgain {
-			fmt.Print("Enter end time of event :")
-			if !scanner.Scan() {
-				return
-			}
-			inputStr := scanner.Text()
+			inputStr := inputFromUser("end time of event")
 			t, err := timeParser(inputStr)
 			if err != nil {
 				displayError(ctx, "Wrong formatting !")
@@ -219,19 +205,8 @@ func addCommand(command []string, ctx *gogendaContext) (err error) {
 				}
 			}
 		}
-
-		fmt.Print("Enter name of event :")
-		if !scanner.Scan() {
-			return
-		}
-		name = scanner.Text()
-
-		fmt.Print("Enter type of event :")
-		if !scanner.Scan() {
-			return
-		}
-		category = scanner.Text()
-		fmt.Println()
+		name = inputFromUser("name of event")
+		category = inputFromUser("category of event")
 	}
 
 	color := confGetColorForName(category, ctx.configuration)
