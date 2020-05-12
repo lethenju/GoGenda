@@ -55,6 +55,8 @@ type gogendaContext struct {
 	colors colors
 	// The configuration with the categories of event and their appropriate colors
 	configuration Config
+	// if we're on shell mode or not
+	isShell bool
 }
 
 // The commandHandler takes the command in parameter and dispatchs it to the different command methods in command.go
@@ -145,7 +147,7 @@ func getLastEvent(ctx *gogendaContext) (calendar.Event, error) {
 
 // Gogenda can be called as a shell, to have a shell like environement for long periods of usage
 func shell(ctx *gogendaContext) {
-
+	ctx.isShell = true
 	runningFlag := true
 	displayInfoHeading(ctx, "Welcome to GoGenda!")
 	displayInfo(ctx, "Version number : "+version)
@@ -217,7 +219,6 @@ func shell(ctx *gogendaContext) {
 
 // Main entry point
 func main() {
-
 	usr, _ := user.Current()
 	userDir := usr.HomeDir
 
@@ -242,6 +243,7 @@ func main() {
 			shell(&ctx)
 			return
 		}
+		ctx.isShell = false
 
 		if strings.ToUpper(args[1]) == "HELP" || strings.ToUpper(args[1]) == "--HELP" {
 			helpCommand(&ctx)

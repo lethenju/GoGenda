@@ -218,16 +218,16 @@ func addCommand(command []string, ctx *gogendaContext) (err error) {
 }
 
 // Print usage
-func helpCommand(ctx *gogendaContext, isShell bool) {
+func helpCommand(ctx *gogendaContext) {
 	displayInfoHeading(ctx, "== GoGenda ==")
 	fmt.Println(" GoGenda helps you keep track of your activities")
 	displayInfoHeading(ctx, " = Commands = ")
 	prefix := ""
-	if !isShell {
+	if !ctx.isShell {
 		prefix = " gogenda"
 	}
 	fmt.Println("")
-	if !isShell {
+	if !ctx.isShell {
 		fmt.Println(" gogenda shell - Launch the shell UI")
 
 	}

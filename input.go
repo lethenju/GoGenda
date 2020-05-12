@@ -14,5 +14,5 @@ func inputFromUser(name string) (inputUser string) {
 	if !scanner.Scan() {
 		return
 	}
-	inputStr := scanner.Text()
+	return scanner.Text()
 }
