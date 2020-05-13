@@ -168,42 +168,43 @@ func planCommand(command []string, ctx *gogendaContext) (err error) {
 func addCommand(command []string, ctx *gogendaContext) (err error) {
 	var date time.Time
 	var endDate time.Time
-
 	var name string
 	var category string
-	if len(command) == 1 {
-		// No arguments given, we're gonna ask the user everything
+
+	askDate := func(date *time.Time) {
 		askAgain := true
 		for askAgain {
 			inputStr := inputFromUser("date of event")
-			date, err = dateParser(inputStr)
+			*date, err = dateParser(inputStr)
 			if err != nil {
 				displayError(ctx, "Wrong formatting !")
 			} else {
 				askAgain = false
 			}
 		}
-
-		askAgain = true
+	}
+	askTime := func(date *time.Time) {
+		askAgain := true
 		for askAgain {
 			inputStr := inputFromUser("begin time of event")
 			t, err := timeParser(inputStr)
 			if err != nil {
 				displayError(ctx, "Wrong formatting !")
 			} else {
-				date = time.Date(date.Year(), date.Month(), date.Day(), t.Hour(), t.Minute(), t.Second(), 0, time.Local)
+				*date = time.Date(date.Year(), date.Month(), date.Day(), t.Hour(), t.Minute(), t.Second(), 0, time.Local)
 				askAgain = false
 			}
 		}
-
-		askAgain = true
+	}
+	askEndTime := func(endDate *time.Time) {
+		askAgain := true
 		for askAgain {
 			inputStr := inputFromUser("end time of event")
 			t, err := timeParser(inputStr)
 			if err != nil {
 				displayError(ctx, "Wrong formatting !")
 			} else {
-				endDate = time.Date(date.Year(), date.Month(), date.Day(), t.Hour(), t.Minute(), t.Second(), 0, time.Local)
+				*endDate = time.Date(date.Year(), date.Month(), date.Day(), t.Hour(), t.Minute(), t.Second(), 0, time.Local)
 				if !endDate.After(date) {
 					displayError(ctx, "End time cannot be before start time !")
 				} else {
@@ -211,8 +212,30 @@ func addCommand(command []string, ctx *gogendaContext) (err error) {
 				}
 			}
 		}
-		name = inputFromUser("name of event")
-		category = inputFromUser("category of event")
+	}
+	askName := func(name *string) {
+		*name = inputFromUser("name of event")
+	}
+	askCategory := func(category *string) {
+		*category = inputFromUser("category of event")
+	}
+	/*
+		if len(command) == 2 {
+			// One argument given, we need to check which one is it : time, date or name
+			date, err = timeParser(command[1])
+			if err == nil { // we have our time
+
+			}
+
+		}*/
+	if len(command) == 1 {
+		// No arguments given, we're gonna ask the user everything
+		askDate(&date)
+		askTime(&date)
+		askEndTime(&endDate)
+		askName(&name)
+		askCategory(&category)
+
 	}
 
 	color := confGetColorFromName(category, ctx.configuration)
