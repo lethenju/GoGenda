@@ -239,8 +239,42 @@ func addCommand(command []string, ctx *gogendaContext) (err error) {
 				category = command[1]
 			}
 		}
-	}
+	} else if len(command) == 3 {
+		// Two arguments given, we need to check if they are :
 
+		// time date
+		// time category
+		date, err = timeParser(command[1])
+		if err == nil { // we have our time
+			isTimeSet = true // So we set this flag on
+			t, err := dateParser(command[2])
+			if err == nil { // Date is correct
+				date = time.Date(t.Year(), t.Month(), t.Day(), date.Hour(), date.Minute(), date.Second(), 0, time.Local)
+				isDateSet = true
+			} else { // Else, we're gonna assume its a category
+				category = command[2]
+			}
+		} else {
+
+			// date time
+			// date category
+			date, err = dateParser(command[1])
+			if err == nil { // we have our date
+				isDateSet = true // So we set this flag on
+				t, err := timeParser(command[2])
+				if err == nil { // Time is correct
+					date = time.Date(date.Year(), date.Month(), date.Day(), t.Hour(), t.Minute(), t.Second(), 0, time.Local)
+					isTimeSet = true
+				} else { // Else, we're gonna assume its a category
+					category = command[2]
+				}
+			} else {
+				// category name
+				category = command[1]
+				name = command[2]
+			}
+		}
+	}
 	if !isDateSet {
 		askDate(&date)
 		isDateSet = true
