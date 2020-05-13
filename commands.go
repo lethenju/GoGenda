@@ -327,6 +327,14 @@ func addCommand(command []string, ctx *gogendaContext) (err error) {
 				name = command[3]
 			}
 		}
+	} else if len(command) == 5 {
+		// Now we have 4 arguments. They can be either :
+		// time date endDate category
+		// time date category name
+		// date time endDate category
+		// date time category name
+
+		// Ugh.. TODO reuse the code up there instead of redoing it again.
 
 	}
 
@@ -361,6 +369,9 @@ func addCommand(command []string, ctx *gogendaContext) (err error) {
 func helpCommand(ctx *gogendaContext) {
 	displayInfoHeading(ctx, "== GoGenda ==")
 	fmt.Println(" GoGenda helps you keep track of your activities")
+	fmt.Println(" Param guide : (time) can be, case unsensitive, 'now', 'HH', 'HH:MM', 'HH:MM:SS'")
+	fmt.Println("             | (date) can be, case unsensitive, 'yesterday', 'today', 'tomorrow', 'YYYY-MM-DD', 'YYYY/MM/DD', 'MM-DD', 'MM/DD'")
+	fmt.Println("             | (categort) is one of the one you declared in your config.json file, case unsensitive")
 	displayInfoHeading(ctx, " = Commands = ")
 	prefix := ""
 	if !ctx.isShell {
@@ -377,8 +388,21 @@ func helpCommand(ctx *gogendaContext) {
 	fmt.Println(prefix + " stop - Stop the current activity")
 	fmt.Println(prefix + " rename - Rename the current activity")
 	fmt.Println(prefix + " delete - Delete the current activity")
-	fmt.Println(prefix + " plan (today / tommorow / yyyy-mm-dd / mm-dd) - shows events of the day")
-	fmt.Println(prefix + " add - add an event to the planning")
+	fmt.Println(prefix + " plan - shows events of the day. You can call it alone or with a date param.")
+	fmt.Println("  | The program will get you today's planning if you dont specify a param")
+	fmt.Println("  - (date)")
+	fmt.Println(prefix + " add - add an event to the planning. You can call it alone or with some params.")
+	fmt.Println("  | the program will ask you the remaining parameters of the event")
+	fmt.Println("  | (time) ")
+	fmt.Println("  | (time) (date)")
+	fmt.Println("  | (time) (date) (endTime)")
+	fmt.Println("  | (time) (date) (category)")
+	fmt.Println("  | (time) (category) (name)")
+	fmt.Println("  | (date) ")
+	fmt.Println("  | (date) (time)")
+	fmt.Println("  | (date) (time) (endTime)")
+	fmt.Println("  | (date) (time) (category)")
+	fmt.Println("  - (date) (category) (name)")
 	fmt.Println(prefix + " help - shows the help")
 	fmt.Println(prefix + " version - shows the current version")
 }
