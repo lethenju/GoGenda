@@ -166,19 +166,25 @@ func planCommand(command []string, ctx *gogendaContext) (err error) {
 // Add an event sometime
 // If you want to add it now, you better use startCommand
 func addCommand(command []string, ctx *gogendaContext) (err error) {
+
 	var date time.Time
 	var endDate time.Time
 	var name string
 	var category string
 
+	var isDateSet bool
+	var isTimeSet bool
+	var isEndDateSet bool
+
 	askDate := func(date *time.Time) {
 		askAgain := true
 		for askAgain {
 			inputStr := inputFromUser("date of event")
-			*date, err = dateParser(inputStr)
+			t, err := dateParser(inputStr)
 			if err != nil {
 				displayError(ctx, "Wrong formatting !")
 			} else {
+				*date = time.Date(t.Year(), t.Month(), t.Day(), date.Hour(), date.Minute(), date.Second(), 0, time.Local)
 				askAgain = false
 			}
 		}
@@ -219,23 +225,39 @@ func addCommand(command []string, ctx *gogendaContext) (err error) {
 	askCategory := func(category *string) {
 		*category = inputFromUser("category of event")
 	}
-	/*
-		if len(command) == 2 {
-			// One argument given, we need to check which one is it : time, date or name
-			date, err = timeParser(command[1])
-			if err == nil { // we have our time
 
+	if len(command) == 2 {
+		// One argument given, we need to check which one is it : time, date or name
+		date, err = timeParser(command[1])
+		if err == nil { // we have our time
+			isTimeSet = true // So we set this flag on
+		} else {
+			date, err = dateParser(command[1])
+			if err == nil { // We have our date
+				isDateSet = true // So we set this flag on
+			} else { // Its a category
+				category = command[1]
 			}
+		}
+	}
 
-		}*/
-	if len(command) == 1 {
-		// No arguments given, we're gonna ask the user everything
+	if !isDateSet {
 		askDate(&date)
+		isDateSet = true
+	}
+	if !isTimeSet {
 		askTime(&date)
+		isTimeSet = true
+	}
+	if !isEndDateSet {
 		askEndTime(&endDate)
+		isEndDateSet = true
+	}
+	if name == "" {
 		askName(&name)
+	}
+	if category == "" {
 		askCategory(&category)
-
 	}
 
 	color := confGetColorFromName(category, ctx.configuration)
