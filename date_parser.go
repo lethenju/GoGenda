@@ -95,3 +95,25 @@ func timeParser(timeStr string) (t time.Time, err error) {
 	}
 	return time.Now(), errors.New("Wrong formatting")
 }
+
+func buildDateFromDateTime(dateStr string, timeStr string, date *time.Time) (errTime error, errDate error) {
+	*date, errTime = timeParser(timeStr)
+	if errTime == nil { // we have our time
+		t, errDate := dateParser(dateStr)
+		if errDate == nil { // Date is correct
+			*date = time.Date(t.Year(), t.Month(), t.Day(), date.Hour(), date.Minute(), date.Second(), 0, time.Local)
+		}
+	}
+	return errTime, errDate
+}
+
+func buildDateFromTimeDate(timeStr string, dateStr string, date *time.Time) (errTime error, errDate error) {
+	*date, errDate = dateParser(dateStr)
+	if errDate == nil { // Date is correct
+		t, errTime := timeParser(timeStr)
+		if errTime == nil { // we have our time
+			*date = time.Date(date.Year(), date.Month(), date.Day(), t.Hour(), t.Minute(), t.Second(), 0, time.Local)
+		}
+	}
+	return errTime, errDate
+}

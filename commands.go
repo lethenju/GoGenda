@@ -244,37 +244,68 @@ func addCommand(command []string, ctx *gogendaContext) (err error) {
 
 		// time date
 		// time category
-		date, err = timeParser(command[1])
-		if err == nil { // we have our time
-			isTimeSet = true // So we set this flag on
-			t, err := dateParser(command[2])
-			if err == nil { // Date is correct
-				date = time.Date(t.Year(), t.Month(), t.Day(), date.Hour(), date.Minute(), date.Second(), 0, time.Local)
-				isDateSet = true
-			} else { // Else, we're gonna assume its a category
-				category = command[2]
-			}
-		} else {
+		// date time
+		// date category
 
+		errTime, errDate := buildDateFromTimeDate(command[1], command[2], &date)
+		if errTime == nil && errDate == nil {
+			isTimeSet = true
+			isDateSet = true
+		} else if errTime == nil && errDate != nil { // getting date failed
+			isTimeSet = true
+			category = command[2]
+		} else {
 			// date time
 			// date category
-			date, err = dateParser(command[1])
-			if err == nil { // we have our date
-				isDateSet = true // So we set this flag on
-				t, err := timeParser(command[2])
-				if err == nil { // Time is correct
-					date = time.Date(date.Year(), date.Month(), date.Day(), t.Hour(), t.Minute(), t.Second(), 0, time.Local)
-					isTimeSet = true
-				} else { // Else, we're gonna assume its a category
-					category = command[2]
-				}
-			} else {
-				// category name
-				category = command[1]
-				name = command[2]
+			errTime, errDate := buildDateFromDateTime(command[1], command[2], &date)
+			if errTime == nil && errDate == nil {
+				isTimeSet = true
+				isDateSet = true
+			} else if errDate == nil && errTime != nil { // getting time failed
+				isDateSet = true
+				category = command[2]
 			}
 		}
+
+	} else if len(command) == 4 {
+		// Three arguments given. Need to verify if they are :
+
+		// time date category
+		// time category name
+		// date time category
+		// date category name
+
+		errTime, errDate := buildDateFromTimeDate(command[1], command[2], &date)
+		if errTime == nil && errDate == nil {
+			// time date category
+			isTimeSet = true
+			isDateSet = true
+			category = command[3]
+		} else if errTime == nil && errDate != nil { // getting date failed
+			// time category name
+			isTimeSet = true
+			category = command[2]
+			name = command[3]
+		} else {
+
+			// check if date time category
+			// check if date category name
+			errTime, errDate := buildDateFromDateTime(command[1], command[2], &date)
+			if errTime == nil && errDate == nil {
+				// date time category
+				isTimeSet = true
+				isDateSet = true
+				category = command[3]
+			} else if errDate == nil && errTime != nil { // getting time failed
+				// check if date category name
+				isDateSet = true
+				category = command[2]
+				name = command[3]
+			}
+		}
+
 	}
+
 	if !isDateSet {
 		askDate(&date)
 		isDateSet = true
