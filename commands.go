@@ -270,8 +270,10 @@ func addCommand(command []string, ctx *gogendaContext) (err error) {
 	} else if len(command) == 4 {
 		// Three arguments given. Need to verify if they are :
 
+		// time date endDate
 		// time date category
 		// time category name
+		// date time endDate
 		// date time category
 		// date category name
 
@@ -280,7 +282,17 @@ func addCommand(command []string, ctx *gogendaContext) (err error) {
 			// time date category
 			isTimeSet = true
 			isDateSet = true
-			category = command[3]
+
+			endDate, err = timeParser(command[3])
+			if err == nil { // we have the end hour. Still need to fix the day
+				endDate = time.Date(date.Year(), date.Month(), date.Day(), endDate.Hour(), endDate.Minute(), endDate.Second(), 0, time.Local)
+				if date.After(endDate) { // like if the user wanted an event between 2 days (23:00 -> 01:00)
+					endDate.Add(24 * time.Hour) // move to the next day
+				}
+				isEndDateSet = true // So we set this flag on
+			} else {
+				category = command[3]
+			}
 		} else if errTime == nil && errDate != nil { // getting date failed
 			// time category name
 			isTimeSet = true
@@ -288,6 +300,7 @@ func addCommand(command []string, ctx *gogendaContext) (err error) {
 			name = command[3]
 		} else {
 
+			// check if date time endDate
 			// check if date time category
 			// check if date category name
 			errTime, errDate := buildDateFromDateTime(command[1], command[2], &date)
@@ -295,7 +308,18 @@ func addCommand(command []string, ctx *gogendaContext) (err error) {
 				// date time category
 				isTimeSet = true
 				isDateSet = true
-				category = command[3]
+				fmt.Println(date)
+				// Check if date time endDate
+				endDate, err = timeParser(command[3])
+				if err == nil { // we have the end hour. Still need to fix the day
+					endDate = time.Date(date.Year(), date.Month(), date.Day(), endDate.Hour(), endDate.Minute(), endDate.Second(), 0, time.Local)
+					if date.After(endDate) { // like if the user wanted an event between 2 days (23:00 -> 01:00)
+						endDate.Add(24 * time.Hour) // move to the next day
+					}
+					isEndDateSet = true // So we set this flag on
+				} else {
+					category = command[3]
+				}
 			} else if errDate == nil && errTime != nil { // getting time failed
 				// check if date category name
 				isDateSet = true
@@ -318,11 +342,11 @@ func addCommand(command []string, ctx *gogendaContext) (err error) {
 		askEndTime(&endDate)
 		isEndDateSet = true
 	}
-	if name == "" {
-		askName(&name)
-	}
 	if category == "" {
 		askCategory(&category)
+	}
+	if name == "" {
+		askName(&name)
 	}
 
 	color := confGetColorFromName(category, ctx.configuration)
