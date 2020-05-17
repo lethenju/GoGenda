@@ -311,7 +311,6 @@ func addCommand(command []string, ctx *gogendaContext) (err error) {
 				// date time category
 				isTimeSet = true
 				isDateSet = true
-				fmt.Println(date)
 				// Check if date time endDate
 				endDate, err = timeParser(command[3])
 				if err == nil { // we have the end hour. Still need to fix the day
@@ -370,6 +369,7 @@ func addCommand(command []string, ctx *gogendaContext) (err error) {
 	}
 
 	color := confGetColorFromName(category, ctx.configuration)
+	displayOk(ctx, "Adding event "+name+" of category "+category+" starting "+date.Format("2006-01-02")+" at "+date.Format("15:04")+" until "+endDate.Format("15:04"))
 	_, err = insertActivity(name, color, date, endDate, ctx.srv)
 	if err != nil {
 		displayError(ctx, err.Error())
