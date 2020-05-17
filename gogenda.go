@@ -43,7 +43,7 @@ import (
 )
 
 // Version of the software
-const version = "0.1.8"
+const version = "0.1.9"
 
 // The gogendaContext type centralises every needed data of the application.
 type gogendaContext struct {
@@ -107,7 +107,7 @@ func commandHandler(command []string, ctx *gogendaContext) (err error) {
 		break
 	case "HELP":
 		// Show help
-		helpCommand(ctx)
+		helpCommand(command, ctx)
 	case "VERSION":
 		// Display version
 		displayInfo(ctx, "Gogenda (MIT) Version : "+version)
@@ -246,7 +246,7 @@ func main() {
 		ctx.isShell = false
 
 		if strings.ToUpper(args[1]) == "HELP" || strings.ToUpper(args[1]) == "--HELP" {
-			helpCommand(&ctx)
+			helpCommand([]string{}, &ctx)
 			return
 		}
 
@@ -260,5 +260,5 @@ func main() {
 		}
 		return
 	}
-	helpCommand(&ctx)
+	helpCommand([]string{}, &ctx)
 }

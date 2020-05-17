@@ -267,7 +267,7 @@ func addCommand(command []string, ctx *gogendaContext) (err error) {
 			}
 		}
 
-	} else if len(command) == 4 {
+	} else if len(command) >= 4 {
 		// Three arguments given. Need to verify if they are :
 
 		// time date endDate
@@ -327,15 +327,24 @@ func addCommand(command []string, ctx *gogendaContext) (err error) {
 				name = command[3]
 			}
 		}
-	} else if len(command) == 5 {
-		// Now we have 4 arguments. They can be either :
+	}
+	if len(command) >= 5 {
+		// Now we have at least 4 arguments. They can be either :
 		// time date endDate category
 		// time date category name
 		// date time endDate category
 		// date time category name
 
-		// Ugh.. TODO reuse the code up there instead of redoing it again.
+		// Just check the last one as we already did the other arguments
 
+		if isTimeSet && isDateSet && isEndDateSet {
+			category = command[4]
+			if len(command) > 5 {
+				name = strings.Join(command[5:], " ")
+			}
+		} else if isTimeSet && isDateSet && category != "" {
+			name = strings.Join(command[5:], " ")
+		}
 	}
 
 	if !isDateSet {
@@ -366,43 +375,62 @@ func addCommand(command []string, ctx *gogendaContext) (err error) {
 }
 
 // Print usage
-func helpCommand(ctx *gogendaContext) {
-	displayInfoHeading(ctx, "== GoGenda ==")
-	fmt.Println(" GoGenda helps you keep track of your activities")
-	fmt.Println(" Param guide : (time) can be, case unsensitive, 'now', 'HH', 'HH:MM', 'HH:MM:SS'")
-	fmt.Println("             | (date) can be, case unsensitive, 'yesterday', 'today', 'tomorrow', 'YYYY-MM-DD', 'YYYY/MM/DD', 'MM-DD', 'MM/DD'")
-	fmt.Println("             | (categort) is one of the one you declared in your config.json file, case unsensitive")
-	displayInfoHeading(ctx, " = Commands = ")
+func helpCommand(command []string, ctx *gogendaContext) {
 	prefix := ""
 	if !ctx.isShell {
 		prefix = " gogenda"
 	}
-	fmt.Println("")
-	if !ctx.isShell {
-		fmt.Println(" gogenda shell - Launch the shell UI")
+	specificHelp := ""
+	if len(command) == 2 {
+		specificHelp = command[1]
+	}
+	if specificHelp == "" {
+		displayInfoHeading(ctx, "== GoGenda ==")
+		fmt.Println(" GoGenda helps you keep track of your activities")
+		fmt.Println(" Type Gogenda help (command) to have more help for a specific command")
+		displayInfoHeading(ctx, " = Commands = ")
+		fmt.Println("")
+		if !ctx.isShell {
+			fmt.Println(" gogenda shell - Launch the shell UI")
+		}
+		for _, category := range ctx.configuration.Categories {
+			fmt.Println(prefix + " start " + category.Name + " - Add an event in " + category.Color)
+		}
+		fmt.Println(prefix + " stop - Stop the current activity")
+		fmt.Println(prefix + " rename - Rename the current activity")
+		fmt.Println(prefix + " delete - Delete the current activity")
+		fmt.Println(prefix + " plan - shows events of the day. You can call it alone or with a date param.")
+		fmt.Println(prefix + " add - add an event to the planning. You can call it alone or with some params.")
+		fmt.Println(prefix + " help - shows the help")
+		fmt.Println(prefix + " version - shows the current version")
+	} else if strings.ToUpper(specificHelp) == "ADD" {
+		fmt.Println(prefix + " add - add an event to the planning. You can call it alone or with some params.")
+		fmt.Println("  | the program will ask you the remaining parameters of the event")
+		fmt.Println("  | (time) ")
+		fmt.Println("  | (time) (date)")
+		fmt.Println("  | (time) (date) (endTime)")
+		fmt.Println("  | (time) (date) (endTime) (category)")
+		fmt.Println("  | (time) (date) (endTime) (category) (name...)")
+		fmt.Println("  | (time) (date) (category)")
+		fmt.Println("  | (time) (date) (category) (name...)")
+		fmt.Println("  | (time) (category) (name)")
+		fmt.Println("  | (date) ")
+		fmt.Println("  | (date) (time)")
+		fmt.Println("  | (date) (time) (endTime)")
+		fmt.Println("  | (date) (time) (endTime) (category)")
+		fmt.Println("  | (date) (time) (endTime) (category) (name...)")
+		fmt.Println("  | (date) (time) (category)")
+		fmt.Println("  | (date) (time) (category) (name...)")
+		fmt.Println("  - (date) (category) (name)")
+	} else if strings.ToUpper(specificHelp) == "PLAN" {
+		fmt.Println(prefix + " plan - shows events of the day. You can call it alone or with a date param.")
+		fmt.Println("  | The program will get you today's planning if you dont specify a param")
+		fmt.Println("  - (date)")
+	}
 
+	if specificHelp != "" {
+		fmt.Println(" Param guide : (time) can be, case unsensitive, 'now', 'HH', 'HH:MM', 'HH:MM:SS'")
+		fmt.Println("             | (date) can be, case unsensitive, 'yesterday', 'today', 'tomorrow', 'YYYY-MM-DD', 'YYYY/MM/DD', 'MM-DD', 'MM/DD'")
+		fmt.Println("             | (category) is one of the one you declared in your config.json file, case unsensitive")
 	}
-	for _, category := range ctx.configuration.Categories {
-		fmt.Println(prefix + " start " + category.Name + " - Add an event in " + category.Color)
-	}
-	fmt.Println(prefix + " stop - Stop the current activity")
-	fmt.Println(prefix + " rename - Rename the current activity")
-	fmt.Println(prefix + " delete - Delete the current activity")
-	fmt.Println(prefix + " plan - shows events of the day. You can call it alone or with a date param.")
-	fmt.Println("  | The program will get you today's planning if you dont specify a param")
-	fmt.Println("  - (date)")
-	fmt.Println(prefix + " add - add an event to the planning. You can call it alone or with some params.")
-	fmt.Println("  | the program will ask you the remaining parameters of the event")
-	fmt.Println("  | (time) ")
-	fmt.Println("  | (time) (date)")
-	fmt.Println("  | (time) (date) (endTime)")
-	fmt.Println("  | (time) (date) (category)")
-	fmt.Println("  | (time) (category) (name)")
-	fmt.Println("  | (date) ")
-	fmt.Println("  | (date) (time)")
-	fmt.Println("  | (date) (time) (endTime)")
-	fmt.Println("  | (date) (time) (category)")
-	fmt.Println("  - (date) (category) (name)")
-	fmt.Println(prefix + " help - shows the help")
-	fmt.Println(prefix + " version - shows the current version")
 }
