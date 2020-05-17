@@ -137,6 +137,9 @@ func planCommand(command []string, ctx *gogendaContext) (err error) {
 	begin = time.Date(begin.Year(), begin.Month(), begin.Day(), 0, 0, 0, 0, time.Local)
 	if len(command) > 1 {
 		begin, err = dateParser(command[1])
+		if err != nil {
+			return err
+		}
 	}
 
 	end := time.Date(begin.Year(), begin.Month(), begin.Day(), 23, 59, 59, 0, time.Local)
