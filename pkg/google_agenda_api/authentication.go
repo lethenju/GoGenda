@@ -21,7 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-package main
+package google_agenda_api
 
 import (
 	"encoding/json"
@@ -96,7 +96,10 @@ func saveToken(path string, token *oauth2.Token) {
 	defer f.Close()
 	json.NewEncoder(f).Encode(token)
 }
-func connect() (*calendar.Service, error) {
+
+// Connect to the google agenda endpoint. Will set up automatically the credentials if they dont exist yet
+// return  Calendar service pointer to have access to the calendar
+func Connect() (*calendar.Service, error) {
 
 	usr, _ := user.Current()
 	userDir := usr.HomeDir

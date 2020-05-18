@@ -1,4 +1,4 @@
-package main
+package gogenda
 
 import (
 	"bufio"
@@ -6,17 +6,21 @@ import (
 	"os"
 	"runtime"
 	"strings"
+
+	"github.com/lethenju/gogenda/pkg/colors"
+	"github.com/lethenju/gogenda/pkg/google_agenda_api"
 )
 
 // Gogenda can be called as a shell, to have a shell like environement for long periods of usage
-func shell(ctx *gogendaContext) {
+func shell(ctx *GogendaContext) {
 	ctx.isShell = true
 	runningFlag := true
-	displayInfoHeading(ctx, "Welcome to GoGenda!")
-	displayInfo(ctx, "Version number : "+version)
+
+	colors.DisplayInfoHeading("Welcome to GoGenda!")
+	colors.DisplayInfo("Version number : " + version)
 
 	// Asking the user if he's still doing the last event on google agenda
-	lastEvent, err := getLastEvent(ctx)
+	lastEvent, err := google_agenda_api.GetLastEvent(ctx.srv)
 	if err == nil && lastEvent.Id != "" {
 		fmt.Println("Last event : " + lastEvent.Summary)
 		fmt.Println("Are you still doing that ? (y/n)")
@@ -25,7 +29,7 @@ func shell(ctx *gogendaContext) {
 			fmt.Scan(&userInput)
 		}
 		if userInput == "y" {
-			ctx.activity = &lastEvent
+			SetCurrentActivity(&lastEvent)
 		}
 	}
 	var userInput string
@@ -45,9 +49,10 @@ func shell(ctx *gogendaContext) {
 
 		var command []string
 		for len(command) == 0 {
-			if ctx.activity.Id != "" {
+			act, err := GetCurrentActivity()
+			if err != nil {
 				fmt.Print("[ ")
-				displayOkNoNL(ctx, ctx.activity.Summary+" ")
+				displayOkNoNL(ctx.activity.Summary + " ")
 				duration, err := getDuration(ctx.activity)
 				if err != nil {
 					displayError(ctx, "ERROR : "+err.Error())

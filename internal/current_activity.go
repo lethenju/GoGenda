@@ -1,9 +1,22 @@
-package main
+package gogenda
 
-import "google.golang.org/api/calendar/v3"
+import (
+	"errors"
 
-var currentActivity calendar.Event
+	"google.golang.org/api/calendar/v3"
+)
 
-func getActivity() {
+var currentActivity *calendar.Event
 
+// GetCurrentActivity Returns the currentActivity
+func GetCurrentActivity() (*calendar.Event, error) {
+	if currentActivity == nil {
+		return nil, errors.New("Current Activity is not defined")
+	}
+	return currentActivity, nil
+}
+
+// SetCurrentActivity sets the current activity
+func SetCurrentActivity(activity *calendar.Event) {
+	currentActivity = activity
 }

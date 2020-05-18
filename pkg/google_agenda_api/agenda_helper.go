@@ -21,7 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-package main
+package google_agenda_api
 
 import (
 	"errors"
@@ -30,12 +30,12 @@ import (
 	"google.golang.org/api/calendar/v3"
 )
 
-// Inserts an activity in the agenda
+// InsertActivity : Inserts an activity in the agenda
 // with the name of the event and the color of the event you want, the start and end time
 // colors can be : "red", "yellow", "purple", "orange", "blue"
 // Also give a pointer the the calendar service in order to send the api.
 // It will return, if it succeeds, the event created, and an error code in case it fails.
-func insertActivity(name string, color string, beginTime time.Time, endTime time.Time, srv *calendar.Service) (activity calendar.Event, err error) {
+func InsertActivity(name string, color string, beginTime time.Time, endTime time.Time, srv *calendar.Service) (activity calendar.Event, err error) {
 	var newEvent calendar.Event
 	var edtStart calendar.EventDateTime
 	var edtEnd calendar.EventDateTime
@@ -75,10 +75,10 @@ func insertActivity(name string, color string, beginTime time.Time, endTime time
 	return newEvent, err
 }
 
-// Stops the current activity : actually update the end time of the activity in parameters
+// StopActivity : Stops the current activity : actually update the end time of the activity in parameters
 // to be current time.
 // Also give a pointer the the calendar service in order to send the api.
-func stopActivity(activity *calendar.Event, srv *calendar.Service) (err error) {
+func StopActivity(activity *calendar.Event, srv *calendar.Service) (err error) {
 	var edtEnd calendar.EventDateTime
 	edtEnd.DateTime = time.Now().Format(time.RFC3339)
 	activity.End = &edtEnd
@@ -88,18 +88,18 @@ func stopActivity(activity *calendar.Event, srv *calendar.Service) (err error) {
 	return err
 }
 
-// Deletes the activity given in parameters
+// DeleteActivity : Deletes the activity given in parameters
 // Also give a pointer the the calendar service in order to send the api.
-func deleteActivity(activity *calendar.Event, srv *calendar.Service) (err error) {
+func DeleteActivity(activity *calendar.Event, srv *calendar.Service) (err error) {
 	call := srv.Events.Delete("primary", activity.Id)
 	err = call.Do()
 	activity.Id = ""
 	return err
 }
 
-// Renames the activity given in parameters with the text parameter
+// RenameActivity : Renames the activity given in parameters with the text parameter
 // Also give a pointer the the calendar service in order to send the api.
-func renameActivity(activity *calendar.Event, text string, srv *calendar.Service) (err error) {
+func RenameActivity(activity *calendar.Event, text string, srv *calendar.Service) (err error) {
 	var edtEnd calendar.EventDateTime
 	edtEnd.DateTime = time.Now().Format(time.RFC3339)
 	activity.Summary = text
@@ -108,17 +108,17 @@ func renameActivity(activity *calendar.Event, text string, srv *calendar.Service
 	return err
 }
 
-// Retrieve a Events* list of events which occurs between the dates given in parameters (in format RFC3339)
+// GetActivitiesBetweenDates Retrieve a Events* list of events which occurs between the dates given in parameters (in format RFC3339)
 // Also give a pointer the the calendar service in order to send the api.
-func getActivitiesBetweenDates(beginDate string, endDate string, srv *calendar.Service) (cals *calendar.Events, err error) {
+func GetActivitiesBetweenDates(beginDate string, endDate string, srv *calendar.Service) (cals *calendar.Events, err error) {
 
 	events, err := srv.Events.List("primary").ShowDeleted(false).
 		SingleEvents(true).TimeMin(beginDate).TimeMax(endDate).MaxResults(64).OrderBy("startTime").Do()
 	return events, err
 }
 
-// Retrieve the duration (now - startTime) of current event
-func getDuration(activity *calendar.Event) (string, error) {
+// GetDuration Retrieve the duration (now - startTime) of current event
+func GetDuration(activity *calendar.Event) (string, error) {
 
 	startTime, err := time.Parse(time.RFC3339, activity.Start.DateTime)
 	if err != nil {
@@ -128,7 +128,8 @@ func getDuration(activity *calendar.Event) (string, error) {
 	return duration.Truncate(time.Second).String(), nil
 }
 
-func getColorIDFromColorName(colorName string) (colorID string, err error) {
+// GetColorIDFromColorName  TODO
+func GetColorIDFromColorName(colorName string) (colorID string, err error) {
 	switch colorName {
 	case "red":
 		return "11", nil
@@ -144,8 +145,8 @@ func getColorIDFromColorName(colorName string) (colorID string, err error) {
 	return "", errors.New("Didnt find color")
 }
 
-// Get the string color equivalent for a google agenda colorId
-func getColorNameFromColorID(colorID string) (colorName string, err error) {
+// GetColorNameFromColorID TODO
+func GetColorNameFromColorID(colorID string) (colorName string, err error) {
 	switch colorID {
 	case "11":
 		return "red", nil
@@ -159,4 +160,30 @@ func getColorNameFromColorID(colorID string) (colorName string, err error) {
 		return "blue", nil
 	}
 	return "7", errors.New("Didnt find color")
+}
+
+// GetLastEvent function gets the last event we set on google agenda today, in
+// order to ask the user if he's still doing that task or not
+// TODO : Use the newer getActivitiesBetweenDates instead
+func GetLastEvent(srv *calendar.Service) (calendar.Event, error) {
+
+	var selectedEvent calendar.Event
+
+	t := time.Now().Format(time.RFC3339)
+	events, err := srv.Events.List("primary").ShowDeleted(false).
+		SingleEvents(true).TimeMin(time.Now().Add(-12 * time.Hour).Format(time.RFC3339)).TimeMax(t).MaxResults(10).OrderBy("startTime").Do()
+	if err != nil {
+		//displayError(ctx, "ERROR : "+err.Error())
+		return selectedEvent, err
+	}
+
+	var oldTime calendar.EventDateTime
+	oldTime.DateTime = time.RFC3339
+	selectedEvent.Start = &oldTime
+	for _, event := range events.Items {
+		if event.Start.DateTime > selectedEvent.Start.DateTime {
+			selectedEvent = *event
+		}
+	}
+	return selectedEvent, nil
 }

@@ -27,7 +27,7 @@ SOFTWARE.
  @Author : Julien LE THENO
  =============================================
 */
-package main
+package gogendalib
 
 import (
 	"bufio"

@@ -34,7 +34,9 @@ import (
 	"os"
 	"os/user"
 	"strings"
-	"time"
+
+	"github.com/lethenju/gogenda/pkg/colors"
+	"github.com/lethenju/gogenda/pkg/google_agenda_api"
 
 	"google.golang.org/api/calendar/v3"
 )
@@ -42,14 +44,11 @@ import (
 // Version of the software
 const version = "0.2.0"
 
-// The gogendaContext type centralises every needed data of the application.
-type gogendaContext struct {
+// GogendaContext The gogendaContext type centralises every needed data of the application.
+type GogendaContext struct {
 	// Current activity
-	activity *calendar.Event
 	// The "service" of the calendar API, to able us to call API methods in Google Calendar's endpoint
 	srv *calendar.Service
-	// set of colors (see colors.go) for coloured printing.
-	colors colors
 	// if we're on shell mode or not
 	isShell bool
 }
@@ -114,32 +113,6 @@ func commandHandler(command []string, ctx *gogendaContext) (err error) {
 	return nil
 }
 
-// getLastEvent function gets the last event we set on google agenda today, in
-// order to ask the user if he's still doing that task or not
-// TODO : Use the newer getActivitiesBetweenDates instead
-func getLastEvent(ctx *gogendaContext) (calendar.Event, error) {
-
-	var selectedEvent calendar.Event
-
-	t := time.Now().Format(time.RFC3339)
-	events, err := ctx.srv.Events.List("primary").ShowDeleted(false).
-		SingleEvents(true).TimeMin(time.Now().Add(-12 * time.Hour).Format(time.RFC3339)).TimeMax(t).MaxResults(10).OrderBy("startTime").Do()
-	if err != nil {
-		displayError(ctx, "ERROR : "+err.Error())
-		return selectedEvent, err
-	}
-
-	var oldTime calendar.EventDateTime
-	oldTime.DateTime = time.RFC3339
-	selectedEvent.Start = &oldTime
-	for _, event := range events.Items {
-		if event.Start.DateTime > selectedEvent.Start.DateTime {
-			selectedEvent = *event
-		}
-	}
-	return selectedEvent, nil
-}
-
 // Main entry point
 func main() {
 	usr, _ := user.Current()
@@ -147,11 +120,11 @@ func main() {
 
 	var ctx gogendaContext
 	// Setup colors printing
-	setupColors(&ctx.colors)
+	colors.SetupColors()
 	// Connect to API
-	ctx.srv, err = connect()
+	ctx.srv, err = google_agenda_api.Connect()
 	if err != nil {
-		displayError(&ctx.colors, err)
+		displayError(err)
 		return
 	}
 
@@ -160,7 +133,7 @@ func main() {
 	config, err := LoadConfiguration(userDir + "/.gogenda/config.json")
 	if err != nil {
 		// Conf doesnt exist
-		displayError(&ctx, "Could not open ~/.gogenda/config.json")
+		displayError("Could not open ~/.gogenda/config.json")
 	}
 	args := os.Args
 	if len(args) > 1 {

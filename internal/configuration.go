@@ -31,6 +31,7 @@ package gogenda
 
 import (
 	"encoding/json"
+	"errors"
 	"os"
 	"strings"
 )
@@ -51,7 +52,7 @@ type Config struct {
 }
 
 // Conf is the globally accessible configuration
-var Conf Config
+var conf Config
 
 // LoadConfiguration : Init and load the configuration in the conf variable
 func LoadConfiguration(file string) (err error) {
@@ -60,16 +61,24 @@ func LoadConfiguration(file string) (err error) {
 		return err
 	}
 	defer f.Close()
-	Conf = Config{}
-	err = json.NewDecoder(f).Decode(Conf)
+	conf = Config{}
+	err = json.NewDecoder(f).Decode(conf)
 	return err
+}
+
+// GetConfig Returns a pointer to the configuration, return an error if it is not set up
+func GetConfig() (*Config, error) {
+	if len(conf.Categories) == 0 { // not setup, return an error
+		return &conf, errors.New("Configuration hasnt been loaded yet")
+	}
+	return &conf, nil
 }
 
 //GetColorFromName returns the color string for a name category
 func GetColorFromName(name string) (color string) {
 
 	ourCategory := ConfigCategory{Name: "default", Color: "blue"}
-	for _, category := range Conf.Categories {
+	for _, category := range conf.Categories {
 		if strings.ToUpper(name) == category.Name {
 			ourCategory = category
 		}
@@ -80,7 +89,7 @@ func GetColorFromName(name string) (color string) {
 //GetNameFromColor returns the name string for a color category
 func GetNameFromColor(color string) (name string) {
 	ourCategory := ConfigCategory{Name: "default", Color: "blue"}
-	for _, category := range Conf.Categories {
+	for _, category := range conf.Categories {
 		if color == category.Color {
 			ourCategory = category
 		}
