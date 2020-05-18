@@ -35,7 +35,8 @@ import (
 	"os"
 )
 
-func inputFromUser(name string) (inputUser string) {
+// InputFromUser is a helper function to ask nicely the user of some string to enter and get it
+func InputFromUser(name string) (inputUser string) {
 
 	scanner := bufio.NewScanner(os.Stdin)
 

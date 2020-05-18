@@ -35,11 +35,11 @@ import (
 	"time"
 )
 
-// Parses a date given in parameters
+// DateParser : Parses a date given in parameters
 // accepted input :
 // case not sensitive : "yesterday", "today", "tommorow"
 // date in YYYY-MM-DD, YYYY/MM/DD, MM-DD, MM/DD
-func dateParser(dateToParse string) (date time.Time, err error) {
+func DateParser(dateToParse string) (date time.Time, err error) {
 	date = time.Now()
 	if strings.ToUpper(dateToParse) == "TODAY" {
 		return time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, time.Local), nil
@@ -74,7 +74,8 @@ func dateParser(dateToParse string) (date time.Time, err error) {
 	return time.Now(), errors.New("Wrong formatting")
 }
 
-func timeParser(timeStr string) (t time.Time, err error) {
+// TimeParser parses a time string
+func TimeParser(timeStr string) (t time.Time, err error) {
 	if strings.ToUpper(timeStr) == "NOW" {
 		return time.Now(), nil
 	}
@@ -96,10 +97,11 @@ func timeParser(timeStr string) (t time.Time, err error) {
 	return time.Now(), errors.New("Wrong formatting")
 }
 
-func buildDateFromDateTime(dateStr string, timeStr string, date *time.Time) (errTime error, errDate error) {
-	*date, errDate = dateParser(dateStr)
+//BuildDateFromDateTime build a date (referenced in parameter with some date string and time string in any format)
+func BuildDateFromDateTime(dateStr string, timeStr string, date *time.Time) (errTime error, errDate error) {
+	*date, errDate = DateParser(dateStr)
 	if errDate == nil { // Date is correct
-		t, errTime := timeParser(timeStr)
+		t, errTime := TimeParser(timeStr)
 		if errTime == nil { // we have our time
 			*date = time.Date(date.Year(), date.Month(), date.Day(), t.Hour(), t.Minute(), t.Second(), 0, time.Local)
 		}
@@ -108,7 +110,8 @@ func buildDateFromDateTime(dateStr string, timeStr string, date *time.Time) (err
 
 }
 
-func buildDateFromTimeDate(timeStr string, dateStr string, date *time.Time) (errTime error, errDate error) {
+//BuildDateFromTimeDate build a date (referenced in parameter with some time string and date string in any format)
+func BuildDateFromTimeDate(timeStr string, dateStr string, date *time.Time) (errTime error, errDate error) {
 	*date, errTime = timeParser(timeStr)
 	if errTime == nil { // we have our time
 		t, errDate := dateParser(dateStr)
