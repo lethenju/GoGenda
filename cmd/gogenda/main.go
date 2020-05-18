@@ -24,18 +24,15 @@ SOFTWARE.
 /*
  ============= GOGENDA SOURCE CODE ===========
  @Description : GoGenda is a CLI for google agenda, to focus on one task at a time and logs your activity
- @Version : 0.1.6
+ @Version : 0.2.0
  @Author : Julien LE THENO
  =============================================
 */
 package main
 
 import (
-	"bufio"
-	"fmt"
 	"os"
 	"os/user"
-	"runtime"
 	"strings"
 	"time"
 
@@ -43,7 +40,7 @@ import (
 )
 
 // Version of the software
-const version = "0.1.9"
+const version = "0.2.0"
 
 // The gogendaContext type centralises every needed data of the application.
 type gogendaContext struct {
@@ -145,78 +142,6 @@ func getLastEvent(ctx *gogendaContext) (calendar.Event, error) {
 	return selectedEvent, nil
 }
 
-// Gogenda can be called as a shell, to have a shell like environement for long periods of usage
-func shell(ctx *gogendaContext) {
-	ctx.isShell = true
-	runningFlag := true
-	displayInfoHeading(ctx, "Welcome to GoGenda!")
-	displayInfo(ctx, "Version number : "+version)
-
-	// Asking the user if he's still doing the last event on google agenda
-	lastEvent, err := getLastEvent(ctx)
-	if err == nil && lastEvent.Id != "" {
-		fmt.Println("Last event : " + lastEvent.Summary)
-		fmt.Println("Are you still doing that ? (y/n)")
-		userInput := ""
-		for userInput != "y" && userInput != "n" {
-			fmt.Scan(&userInput)
-		}
-		if userInput == "y" {
-			ctx.activity = &lastEvent
-		}
-	}
-	var userInput string
-
-	scanner := bufio.NewScanner(os.Stdin)
-
-	if runtime.GOOS == "windows" {
-		// Scan twice on windows because scanner is not empty at startup
-		if !scanner.Scan() {
-			return
-		}
-		userInput = scanner.Text()
-	}
-
-	// Main loop
-	for runningFlag {
-
-		var command []string
-		for len(command) == 0 {
-			if ctx.activity.Id != "" {
-				fmt.Print("[ ")
-				displayOkNoNL(ctx, ctx.activity.Summary+" ")
-				duration, err := getDuration(ctx.activity)
-				if err != nil {
-					displayError(ctx, "ERROR : "+err.Error())
-				}
-				displayInfoNoNL(ctx, duration)
-
-				fmt.Print(" ]")
-			}
-			fmt.Print("> ")
-			if !scanner.Scan() {
-				return
-			}
-
-			userInput = scanner.Text()
-			command = strings.Fields(userInput)
-		}
-		if strings.ToUpper(command[0]) == "EXIT" {
-			fmt.Println("See you later !")
-			if ctx.activity.Id != "" {
-				stopActivity(ctx.activity, ctx.srv)
-			}
-			runningFlag = false
-			break
-		}
-		res := commandHandler(command, ctx)
-		if res != nil {
-			displayError(ctx, "ERROR : "+res.Error())
-		}
-	}
-
-}
-
 // Main entry point
 func main() {
 	usr, _ := user.Current()
@@ -240,7 +165,7 @@ func main() {
 	if len(args) > 1 {
 		// Launch shell based UI
 		if strings.ToUpper(args[1]) == "SHELL" || strings.ToUpper(args[1]) == "-SH" {
-			shell(&ctx)
+			gogenda.shell(&ctx)
 			return
 		}
 		ctx.isShell = false

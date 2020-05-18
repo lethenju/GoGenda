@@ -21,12 +21,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-/*
- ============= GOGENDA SOURCE CODE ===========
- @Description : GoGenda is a CLI for google agenda, to focus on one task at a time and logs your activity
- @Author : Julien LE THENO
- =============================================
-*/
 package main
 
 import (
@@ -42,31 +36,31 @@ type colors struct {
 	colorError       *color.Color
 }
 
-func displayInfo(ctx *gogendaContext, str string) {
-	ctx.colors.colorInfo.Print(str)
+func displayInfo(colors *colors, str string) {
+	colors.colorInfo.Print(str)
 	fmt.Println()
 }
-func displayInfoNoNL(ctx *gogendaContext, str string) {
-	ctx.colors.colorInfo.Print(str)
+func displayInfoNoNL(colors *colors, str string) {
+	colors.colorInfo.Print(str)
 }
-func displayInfoHeading(ctx *gogendaContext, str string) {
-	ctx.colors.colorInfoHeading.Print(str)
+func displayInfoHeading(colors *colors, str string) {
+	colors.colorInfoHeading.Print(str)
 	fmt.Println() // Because the newline keeps the background color, we need to do it separately
 }
-func displayError(ctx *gogendaContext, str string) {
-	ctx.colors.colorError.Print(str)
+func displayError(colors *colors, str string) {
+	colors.colorError.Print(str)
 	fmt.Println()
 }
-func displayOk(ctx *gogendaContext, str string) {
-	ctx.colors.colorOk.Println(str)
+func displayOk(colors *colors, str string) {
+	colors.colorOk.Println(str)
 }
-func displayOkNoNL(ctx *gogendaContext, str string) {
-	ctx.colors.colorOk.Print(str)
+func displayOkNoNL(colors *colors, str string) {
+	colors.colorOk.Print(str)
 }
 
-func setupColors(ctx *gogendaContext) {
-	ctx.colors.colorInfo = color.New(color.FgBlue).Add(color.BgWhite)
-	ctx.colors.colorInfoHeading = color.New(color.FgWhite).Add(color.BgBlue)
-	ctx.colors.colorOk = color.New(color.FgGreen)
-	ctx.colors.colorError = color.New(color.FgWhite).Add(color.BgHiRed)
+func setupColors(colors *colors) {
+	colors.colorInfo = color.New(color.FgBlue).Add(color.BgWhite)
+	colors.colorInfoHeading = color.New(color.FgWhite).Add(color.BgBlue)
+	colors.colorOk = color.New(color.FgGreen)
+	colors.colorError = color.New(color.FgWhite).Add(color.BgHiRed)
 }

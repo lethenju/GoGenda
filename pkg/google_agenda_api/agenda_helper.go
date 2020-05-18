@@ -21,12 +21,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-/*
- ============= GOGENDA SOURCE CODE ===========
- @Description : GoGenda is a CLI for google agenda, to focus on one task at a time and logs your activity
- @Author : Julien LE THENO
- =============================================
-*/
 package main
 
 import (
