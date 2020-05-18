@@ -53,7 +53,7 @@ func Shell(srv *calendar.Service, version string) {
 		var command []string
 		for len(command) == 0 {
 			act, err := current_activity.GetCurrentActivity()
-			if err != nil {
+			if err == nil {
 				fmt.Print("[ ")
 				colors.DisplayOkNoNL(act.Summary + " ")
 				duration, err := api.GetDuration(act)
