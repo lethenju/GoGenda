@@ -1,4 +1,4 @@
-package gogenda
+package main
 
 import (
 	"bufio"

@@ -50,17 +50,16 @@ type Config struct {
 	Categories []ConfigCategory `json:"categories"`
 }
 
-// LoadConfiguration : Loads the configuration in the gogendaContext
-func LoadConfiguration(file string, ctx *gogendaContext) error {
+// LoadConfiguration : Loads the configuration and returns it
+func LoadConfiguration(file string) (configuration *Config, err error) {
 	f, err := os.Open(file)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer f.Close()
-	configuration := &Config{}
+	configuration = &Config{}
 	err = json.NewDecoder(f).Decode(configuration)
-	ctx.configuration = *configuration
-	return err
+	return configuration, err
 }
 
 func confGetColorFromName(name string, conf Config) (color string) {

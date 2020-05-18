@@ -96,7 +96,7 @@ func saveToken(path string, token *oauth2.Token) {
 	defer f.Close()
 	json.NewEncoder(f).Encode(token)
 }
-func connect(ctx *gogendaContext) {
+func connect() (*calendar.Service, error) {
 
 	usr, _ := user.Current()
 	userDir := usr.HomeDir
@@ -112,8 +112,9 @@ func connect(ctx *gogendaContext) {
 	}
 	client := getClient(config)
 
-	ctx.srv, err = calendar.New(client)
+	srv, err := calendar.New(client)
 	if err != nil {
 		log.Fatalf("Unable to retrieve Calendar client: %v", err)
 	}
+	return srv, err
 }

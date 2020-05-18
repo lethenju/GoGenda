@@ -50,8 +50,6 @@ type gogendaContext struct {
 	srv *calendar.Service
 	// set of colors (see colors.go) for coloured printing.
 	colors colors
-	// The configuration with the categories of event and their appropriate colors
-	configuration Config
 	// if we're on shell mode or not
 	isShell bool
 }
@@ -149,14 +147,17 @@ func main() {
 
 	var ctx gogendaContext
 	// Setup colors printing
-	setupColors(&ctx)
+	setupColors(&ctx.colors)
 	// Connect to API
-	connect(&ctx)
-	var currentActivity calendar.Event
+	ctx.srv, err = connect()
+	if err != nil {
+		displayError(&ctx.colors, err)
+		return
+	}
 
 	ctx.activity = &currentActivity
 
-	err := LoadConfiguration(userDir+"/.gogenda/config.json", &ctx)
+	config, err := LoadConfiguration(userDir + "/.gogenda/config.json")
 	if err != nil {
 		// Conf doesnt exist
 		displayError(&ctx, "Could not open ~/.gogenda/config.json")
