@@ -38,8 +38,11 @@ import (
 	"time"
 )
 
+// Command : A command as a suite of arguments given by the user
+type Command []string
+
 // Add an event now
-func startCommand(command []string, ctx *gogendaContext) (err error) {
+func startCommand(command Command, ctx *gogendaContext) (err error) {
 	var nameOfEvent string
 	color := confGetColorFromName(command[1], ctx.configuration)
 	if len(command) == 2 && color != "blue" {
@@ -107,7 +110,7 @@ func deleteCommand(ctx *gogendaContext) (err error) {
 	return nil
 }
 
-func renameCommand(command []string, ctx *gogendaContext) (err error) {
+func renameCommand(command Command, ctx *gogendaContext) (err error) {
 	if ctx.activity.Id == "" {
 		return errors.New("You dont have a current activity to rename")
 	}
@@ -131,7 +134,7 @@ func renameCommand(command []string, ctx *gogendaContext) (err error) {
 	return nil
 }
 
-func planCommand(command []string, ctx *gogendaContext) (err error) {
+func planCommand(command Command, ctx *gogendaContext) (err error) {
 	// Get plan of all day
 	begin := time.Now()
 	begin = time.Date(begin.Year(), begin.Month(), begin.Day(), 0, 0, 0, 0, time.Local)
@@ -168,7 +171,7 @@ func planCommand(command []string, ctx *gogendaContext) (err error) {
 
 // Add an event sometime
 // If you want to add it now, you better use startCommand
-func addCommand(command []string, ctx *gogendaContext) (err error) {
+func addCommand(command Command, ctx *gogendaContext) (err error) {
 
 	var date time.Time
 	var endDate time.Time
@@ -378,7 +381,7 @@ func addCommand(command []string, ctx *gogendaContext) (err error) {
 }
 
 // Print usage
-func helpCommand(command []string, ctx *gogendaContext) {
+func helpCommand(command Command, ctx *gogendaContext) {
 	prefix := ""
 	if !ctx.isShell {
 		prefix = " gogenda"
