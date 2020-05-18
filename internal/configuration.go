@@ -27,7 +27,7 @@ SOFTWARE.
  @Author : Julien LE THENO
  =============================================
 */
-package main
+package gogenda
 
 import (
 	"encoding/json"
@@ -50,22 +50,26 @@ type Config struct {
 	Categories []ConfigCategory `json:"categories"`
 }
 
-// LoadConfiguration : Loads the configuration and returns it
-func LoadConfiguration(file string) (configuration *Config, err error) {
+// Conf is the globally accessible configuration
+var Conf Config
+
+// LoadConfiguration : Init and load the configuration in the conf variable
+func LoadConfiguration(file string) (err error) {
 	f, err := os.Open(file)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer f.Close()
-	configuration = &Config{}
-	err = json.NewDecoder(f).Decode(configuration)
-	return configuration, err
+	Conf = Config{}
+	err = json.NewDecoder(f).Decode(Conf)
+	return err
 }
 
-func confGetColorFromName(name string, conf Config) (color string) {
+//GetColorFromName returns the color string for a name category
+func GetColorFromName(name string) (color string) {
 
 	ourCategory := ConfigCategory{Name: "default", Color: "blue"}
-	for _, category := range conf.Categories {
+	for _, category := range Conf.Categories {
 		if strings.ToUpper(name) == category.Name {
 			ourCategory = category
 		}
@@ -73,9 +77,10 @@ func confGetColorFromName(name string, conf Config) (color string) {
 	return ourCategory.Color
 }
 
-func confGetNameFromColor(color string, conf Config) (name string) {
+//GetNameFromColor returns the name string for a color category
+func GetNameFromColor(color string) (name string) {
 	ourCategory := ConfigCategory{Name: "default", Color: "blue"}
-	for _, category := range conf.Categories {
+	for _, category := range Conf.Categories {
 		if color == category.Color {
 			ourCategory = category
 		}
