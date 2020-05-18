@@ -1,4 +1,4 @@
-package gogenda
+package current_activity
 
 import (
 	"errors"

@@ -27,7 +27,7 @@ SOFTWARE.
  @Author : Julien LE THENO
  =============================================
 */
-package gogenda
+package configuration
 
 import (
 	"encoding/json"
