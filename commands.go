@@ -34,6 +34,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -143,12 +144,13 @@ func planCommand(command Command, ctx *gogendaContext) (err error) {
 		if err != nil {
 			return err
 		}
+
 	}
 
 	end := time.Date(begin.Year(), begin.Month(), begin.Day(), 23, 59, 59, 0, time.Local)
 
 	cals, err := getActivitiesBetweenDates(begin.Format(time.RFC3339), end.Format(time.RFC3339), ctx.srv)
-	displayInfoHeading(ctx, " Events of "+begin.Format(time.RFC822))
+	displayInfoHeading(ctx, " Events of "+begin.Format("01/02"))
 	if cals == nil {
 		displayError(ctx, "Error")
 		return err
@@ -165,6 +167,27 @@ func planCommand(command Command, ctx *gogendaContext) (err error) {
 		category += "]"
 		category = fmt.Sprintf("[%-6s", category)
 		displayOk(ctx, " [ "+beginTime.Format("15:04")+" -> "+endTime.Format("15:04")+" ] "+category+" : "+event.Summary)
+	}
+
+	if len(command) > 2 {
+		// Number of days to do
+		nbToRedo, err := strconv.Atoi(command[2])
+		if err != nil {
+			return err
+		}
+		// Removing a day (that has just be done)
+		nbToRedo--
+		// If we got to zero, we can return, its fine
+		if nbToRedo == 0 {
+			return nil
+		}
+		// adding a day
+		begin = begin.Add(24 * time.Hour)
+		// Putting it in the command
+		command[1] = begin.Format("2006/01/02")
+		command[2] = strconv.Itoa(nbToRedo)
+		// Recursive call
+		planCommand(command, ctx)
 	}
 	return err
 }
@@ -432,6 +455,7 @@ func helpCommand(command Command, ctx *gogendaContext) {
 		fmt.Println(prefix + " plan - shows events of the day. You can call it alone or with a date param.")
 		fmt.Println("  | The program will get you today's planning if you dont specify a param")
 		fmt.Println("  - (date)")
+		fmt.Println("  - (date) (nb of days)")
 	}
 
 	if specificHelp != "" {
