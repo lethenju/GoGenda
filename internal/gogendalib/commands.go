@@ -37,15 +37,22 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/lethenju/gogenda/internal/configuration"
+	"github.com/lethenju/gogenda/internal/current_activity"
+	"github.com/lethenju/gogenda/pkg/colors"
+	api "github.com/lethenju/gogenda/pkg/google_agenda_api"
+
+	"google.golang.org/api/calendar/v3"
 )
 
 // Command : A command as a suite of arguments given by the user
 type Command []string
 
 // Add an event now
-func startCommand(command Command, ctx *gogendaContext) (err error) {
+func startCommand(command Command, srv *calendar.Service) (err error) {
 	var nameOfEvent string
-	color := confGetColorFromName(command[1], ctx.configuration)
+	color := configuration.GetColorFromName(command[1])
 	if len(command) == 2 && color != "blue" {
 		fmt.Print(command)
 		fmt.Print("Enter name of event :")
@@ -54,12 +61,12 @@ func startCommand(command Command, ctx *gogendaContext) (err error) {
 			return
 		}
 		nameOfEvent = scanner.Text()
-
-		if ctx.activity.Id != "" {
+		currentActivity, err := current_activity.GetCurrentActivity()
+		if err == nil {
 			// Stop the current activity
-			err = stopActivity(ctx.activity, ctx.srv)
+			err = api.StopActivity(currentActivity, srv)
 			if err != nil {
-				displayError(ctx, "There was an issue deleting the current event.")
+				colors.DisplayError("There was an issue deleting the current event.")
 			}
 		}
 	} else if len(command) == 2 {
@@ -68,32 +75,34 @@ func startCommand(command Command, ctx *gogendaContext) (err error) {
 		nameOfEvent = strings.Join(command[2:], " ")
 	}
 
-	*ctx.activity, err = insertActivity(nameOfEvent, color, time.Now(), time.Now().Add(30*time.Minute), ctx.srv)
-
+	currentActivity, err := api.InsertActivity(nameOfEvent, color, time.Now(), time.Now().Add(30*time.Minute), srv)
 	if err != nil {
 		return err
 	}
-	displayOk(ctx, "Successfully added activity ! ")
+	current_activity.SetCurrentActivity(currentActivity)
+
+	colors.DisplayOk("Successfully added activity ! ")
 	return nil
 }
 
-func stopCommand(ctx *gogendaContext) (err error) {
-	if ctx.activity.Id == "" {
-		// Nothing to stop
+func stopCommand(srv *calendar.Service) (err error) {
+
+	currentActivity, err := current_activity.GetCurrentActivity()
+	if err != nil {
 		return errors.New("Nothing to stop")
 	}
 
-	duration, err := getDuration(ctx.activity)
+	duration, err := api.GetDuration(currentActivity)
 	if err != nil {
 		return err
 	}
-	displayInfo(ctx, "The activity '"+ctx.activity.Summary+"' lasted "+duration)
+	colors.DisplayInfo("The activity '" + currentActivity.Summary + "' lasted " + duration)
 	if err != nil {
 		return err
 	}
-	err = stopActivity(ctx.activity, ctx.srv)
+	err = api.StopActivity(currentActivity, srv)
 
-	displayOk(ctx, "Successfully stopped the activity ! I hope it went well ")
+	colors.DisplayOk("Successfully stopped the activity ! I hope it went well ")
 	return nil
 }
 
