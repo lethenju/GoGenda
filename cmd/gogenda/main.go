@@ -35,102 +35,33 @@ import (
 	"os/user"
 	"strings"
 
-	"github.com/lethenju/gogenda/pkg/colors"
-	"github.com/lethenju/gogenda/pkg/google_agenda_api"
+	"github.com/lethenju/gogenda/internal/current_activity"
+	"github.com/lethenju/gogenda/internal/gogendalib"
 
-	"google.golang.org/api/calendar/v3"
+	"github.com/lethenju/gogenda/internal/configuration"
+	"github.com/lethenju/gogenda/pkg/colors"
+	api "github.com/lethenju/gogenda/pkg/google_agenda_api"
 )
 
 // Version of the software
 const version = "0.2.0"
-
-// GogendaContext The gogendaContext type centralises every needed data of the application.
-type GogendaContext struct {
-	// Current activity
-	// The "service" of the calendar API, to able us to call API methods in Google Calendar's endpoint
-	srv *calendar.Service
-	// if we're on shell mode or not
-	isShell bool
-}
-
-// The commandHandler takes the command in parameter and dispatchs it to the different command methods in command.go
-func commandHandler(command []string, ctx *gogendaContext) (err error) {
-	// Our command name is in the first argument
-	switch strings.ToUpper(command[0]) {
-	// Start an event
-	case "START":
-		err = startCommand(command, ctx)
-		if err != nil {
-			return err
-		}
-		break
-	case "STOP":
-		// Stop an event
-		err = stopCommand(ctx)
-		if err != nil {
-			return err
-		}
-		break
-	case "RENAME":
-		// Renames an event
-		err = renameCommand(command, ctx)
-		if err != nil {
-			return err
-		}
-		break
-	case "DELETE":
-		// Deletes an event
-		err = deleteCommand(ctx)
-		if err != nil {
-			return err
-		}
-		break
-	case "PLAN":
-		// Show the plan of the date (or today if no date)
-		err = planCommand(command, ctx)
-		if err != nil {
-			return err
-		}
-		break
-	case "ADD":
-		// add an event to the calendar at a specific date
-		err = addCommand(command, ctx)
-		if err != nil {
-			return err
-		}
-		break
-	case "HELP":
-		// Show help
-		helpCommand(command, ctx)
-	case "VERSION":
-		// Display version
-		displayInfo(ctx, "Gogenda (MIT) Version : "+version)
-	default:
-		displayError(ctx, command[0]+": command not found")
-
-	}
-
-	return nil
-}
 
 // Main entry point
 func main() {
 	usr, _ := user.Current()
 	userDir := usr.HomeDir
 
-	var ctx gogendaContext
 	// Setup colors printing
 	colors.SetupColors()
 	// Connect to API
-	ctx.srv, err = google_agenda_api.Connect()
+	srv, err := api.Connect()
+
 	if err != nil {
 		displayError(err)
 		return
 	}
 
-	ctx.activity = &currentActivity
-
-	config, err := LoadConfiguration(userDir + "/.gogenda/config.json")
+	configuration.LoadConfiguration(userDir + "/.gogenda/config.json")
 	if err != nil {
 		// Conf doesnt exist
 		displayError("Could not open ~/.gogenda/config.json")
@@ -139,25 +70,26 @@ func main() {
 	if len(args) > 1 {
 		// Launch shell based UI
 		if strings.ToUpper(args[1]) == "SHELL" || strings.ToUpper(args[1]) == "-SH" {
-			gogenda.shell(&ctx)
+			gogenda.shell(srv)
 			return
 		}
 		ctx.isShell = false
 
 		if strings.ToUpper(args[1]) == "HELP" || strings.ToUpper(args[1]) == "--HELP" {
-			helpCommand([]string{}, &ctx)
+			gogendalib.CommandHandler([]string{"HELP"}, srv, false)
 			return
 		}
 
 		// For the other commands than start its obvious he/she is
 		if strings.ToUpper(args[1]) != "START" {
-			currentActivity, _ = getLastEvent(&ctx)
+			currentActivity, _ = api.GetLastEvent(srv)
+			current_activity.SetCurrentActivity(currentActivity)
 		}
-		err := commandHandler(args[1:], &ctx)
+		err = gogendalib.CommandHandler(args[1:], srv, false)
 		if err != nil {
-			displayError(&ctx, "ERROR : "+err.Error())
+			colors.DisplayError("ERROR : " + err.Error())
 		}
 		return
 	}
-	helpCommand([]string{}, &ctx)
+	gogendalib.CommandHandler([]string{"HELP"}, srv, false)
 }

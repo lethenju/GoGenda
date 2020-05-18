@@ -112,9 +112,9 @@ func BuildDateFromDateTime(dateStr string, timeStr string, date *time.Time) (err
 
 //BuildDateFromTimeDate build a date (referenced in parameter with some time string and date string in any format)
 func BuildDateFromTimeDate(timeStr string, dateStr string, date *time.Time) (errTime error, errDate error) {
-	*date, errTime = timeParser(timeStr)
+	*date, errTime = TimeParser(timeStr)
 	if errTime == nil { // we have our time
-		t, errDate := dateParser(dateStr)
+		t, errDate := DateParser(dateStr)
 		if errDate == nil { // Date is correct
 			*date = time.Date(t.Year(), t.Month(), t.Day(), date.Hour(), date.Minute(), date.Second(), 0, time.Local)
 		}

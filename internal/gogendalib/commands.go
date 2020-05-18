@@ -80,7 +80,7 @@ func startCommand(command Command, srv *calendar.Service) (err error) {
 	if err != nil {
 		return err
 	}
-	current_activity.SetCurrentActivity(currentActivity)
+	current_activity.SetCurrentActivity(&currentActivity)
 
 	colors.DisplayOk("Successfully added activity ! ")
 	return nil
@@ -145,7 +145,7 @@ func planCommand(command Command, srv *calendar.Service) (err error) {
 	begin := time.Now()
 	begin = time.Date(begin.Year(), begin.Month(), begin.Day(), 0, 0, 0, 0, time.Local)
 	if len(command) > 1 {
-		begin, err = dateParser(command[1])
+		begin, err = utilities.DateParser(command[1])
 		if err != nil {
 			return err
 		}
@@ -192,7 +192,7 @@ func planCommand(command Command, srv *calendar.Service) (err error) {
 		command[1] = begin.Format("2006/01/02")
 		command[2] = strconv.Itoa(nbToRedo)
 		// Recursive call
-		api.PlanCommand(command, srv)
+		planCommand(command, srv)
 	}
 	return err
 }
@@ -214,7 +214,7 @@ func addCommand(command Command, srv *calendar.Service) (err error) {
 		askAgain := true
 		for askAgain {
 			inputStr := utilities.InputFromUser("date of event")
-			t, err := dateParser(inputStr)
+			t, err := utilities.DateParser(inputStr)
 			if err != nil {
 				colors.DisplayError("Wrong formatting !")
 			} else {
@@ -227,7 +227,7 @@ func addCommand(command Command, srv *calendar.Service) (err error) {
 		askAgain := true
 		for askAgain {
 			inputStr := utilities.InputFromUser("begin time of event")
-			t, err := timeParser(inputStr)
+			t, err := utilities.TimeParser(inputStr)
 			if err != nil {
 				colors.DisplayError("Wrong formatting !")
 			} else {
@@ -240,7 +240,7 @@ func addCommand(command Command, srv *calendar.Service) (err error) {
 		askAgain := true
 		for askAgain {
 			inputStr := utilities.InputFromUser("end time of event")
-			t, err := timeParser(inputStr)
+			t, err := utilities.TimeParser(inputStr)
 			if err != nil {
 				colors.DisplayError("Wrong formatting !")
 			} else {
@@ -262,11 +262,11 @@ func addCommand(command Command, srv *calendar.Service) (err error) {
 
 	if len(command) == 2 {
 		// One argument given, we need to check which one is it : time, date or name
-		date, err = timeParser(command[1])
+		date, err = utilities.TimeParser(command[1])
 		if err == nil { // we have our time
 			isTimeSet = true // So we set this flag on
 		} else {
-			date, err = dateParser(command[1])
+			date, err = utilities.DateParser(command[1])
 			if err == nil { // We have our date
 				isDateSet = true // So we set this flag on
 			} else { // Its a category
@@ -400,10 +400,10 @@ func addCommand(command Command, srv *calendar.Service) (err error) {
 	}
 
 	color := configuration.GetColorFromName(category)
-	displayOk("Adding event " + name + " of category " + category + " starting " + date.Format("2006-01-02") + " at " + date.Format("15:04") + " until " + endDate.Format("15:04"))
-	_, err = api.InsertActivity(name, color, date, endDate, ctx.srv)
+	colors.DisplayOk("Adding event " + name + " of category " + category + " starting " + date.Format("2006-01-02") + " at " + date.Format("15:04") + " until " + endDate.Format("15:04"))
+	_, err = api.InsertActivity(name, color, date, endDate, srv)
 	if err != nil {
-		api.DisplayError(err.Error())
+		colors.DisplayError(err.Error())
 	}
 	return err
 }
@@ -427,7 +427,8 @@ func helpCommand(command Command, isShell bool) {
 		if !isShell {
 			fmt.Println(" gogenda shell - Launch the shell UI")
 		}
-		for _, category := range configuration.GetConfig().Categories {
+		config, _ := configuration.GetConfig()
+		for _, category := range config.Categories {
 			fmt.Println(prefix + " start " + category.Name + " - Add an event in " + category.Color)
 		}
 		fmt.Println(prefix + " stop - Stop the current activity")

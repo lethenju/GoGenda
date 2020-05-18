@@ -7,20 +7,22 @@ import (
 	"runtime"
 	"strings"
 
+	"google.golang.org/api/calendar/v3"
+
+	"github.com/lethenju/gogenda/internal/current_activity"
 	"github.com/lethenju/gogenda/pkg/colors"
 	"github.com/lethenju/gogenda/pkg/google_agenda_api"
 )
 
 // Gogenda can be called as a shell, to have a shell like environement for long periods of usage
-func shell(ctx *GogendaContext) {
-	ctx.isShell = true
+func shell(srv *calendar.Service, version string) {
 	runningFlag := true
 
 	colors.DisplayInfoHeading("Welcome to GoGenda!")
 	colors.DisplayInfo("Version number : " + version)
 
 	// Asking the user if he's still doing the last event on google agenda
-	lastEvent, err := google_agenda_api.GetLastEvent(ctx.srv)
+	lastEvent, err := google_agenda_api.GetLastEvent(srv)
 	if err == nil && lastEvent.Id != "" {
 		fmt.Println("Last event : " + lastEvent.Summary)
 		fmt.Println("Are you still doing that ? (y/n)")
@@ -29,7 +31,7 @@ func shell(ctx *GogendaContext) {
 			fmt.Scan(&userInput)
 		}
 		if userInput == "y" {
-			SetCurrentActivity(&lastEvent)
+			current_activity.SetCurrentActivity(&lastEvent)
 		}
 	}
 	var userInput string
@@ -49,15 +51,15 @@ func shell(ctx *GogendaContext) {
 
 		var command []string
 		for len(command) == 0 {
-			act, err := GetCurrentActivity()
+			act, err := current_activity.GetCurrentActivity()
 			if err != nil {
 				fmt.Print("[ ")
-				displayOkNoNL(ctx.activity.Summary + " ")
-				duration, err := getDuration(ctx.activity)
+				colors.DisplayOkNoNL(act.Summary + " ")
+				duration, err := api.GetDuration(act)
 				if err != nil {
-					displayError(ctx, "ERROR : "+err.Error())
+					colors.DisplayError("ERROR : " + err.Error())
 				}
-				displayInfoNoNL(ctx, duration)
+				colors.DisplayInfoNoNL(duration)
 
 				fmt.Print(" ]")
 			}
@@ -71,13 +73,13 @@ func shell(ctx *GogendaContext) {
 		}
 		if strings.ToUpper(command[0]) == "EXIT" {
 			fmt.Println("See you later !")
-			if ctx.activity.Id != "" {
-				stopActivity(ctx.activity, ctx.srv)
+			if act != nil {
+				api.StopActivity(act, srv)
 			}
 			runningFlag = false
 			break
 		}
-		res := commandHandler(command, ctx)
+		res := CommandHandler(command, ctx, true)
 		if res != nil {
 			displayError(ctx, "ERROR : "+res.Error())
 		}
