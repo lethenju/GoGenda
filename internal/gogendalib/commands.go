@@ -40,6 +40,7 @@ import (
 
 	"github.com/lethenju/gogenda/internal/configuration"
 	"github.com/lethenju/gogenda/internal/current_activity"
+	"github.com/lethenju/gogenda/internal/utilities"
 	"github.com/lethenju/gogenda/pkg/colors"
 	api "github.com/lethenju/gogenda/pkg/google_agenda_api"
 
@@ -106,45 +107,40 @@ func stopCommand(srv *calendar.Service) (err error) {
 	return nil
 }
 
-func deleteCommand(ctx *gogendaContext) (err error) {
+func deleteCommand(srv *calendar.Service) (err error) {
 
-	if ctx.activity.Id == "" {
-		// Nothing to stop
+	currentActivity, err := current_activity.GetCurrentActivity()
+	if err != nil {
 		return errors.New("Nothing to delete")
 	}
-	err = deleteActivity(ctx.activity, ctx.srv)
+	err = api.DeleteActivity(currentActivity, srv)
 	if err != nil {
 		return err
 	}
-	displayOk(ctx, "Successfully deleted the activity ! ")
+	colors.DisplayOk("Successfully deleted the activity ! ")
 	return nil
 }
 
-func renameCommand(command Command, ctx *gogendaContext) (err error) {
-	if ctx.activity.Id == "" {
-		return errors.New("You dont have a current activity to rename")
+func renameCommand(command Command, srv *calendar.Service) (err error) {
+	currentActivity, err := current_activity.GetCurrentActivity()
+	if err != nil {
+		return errors.New("Nothing to rename")
 	}
 	var nameOfEvent string
 	if len(command) == 1 {
-
-		fmt.Println(ctx, "Enter name of event :  ")
-		scanner := bufio.NewScanner(os.Stdin)
-		if !scanner.Scan() {
-			return
-		}
-		nameOfEvent = scanner.Text()
+		nameOfEvent = utilities.InputFromUser("name of event")
 	} else {
 		nameOfEvent = strings.Join(command[1:], " ")
 	}
-	err = renameActivity(ctx.activity, nameOfEvent, ctx.srv)
+	err = api.RenameActivity(currentActivity, nameOfEvent, srv)
 	if err != nil {
 		return err
 	}
-	displayOk(ctx, "Successfully renamed the activity")
+	colors.DisplayOk("Successfully renamed the activity")
 	return nil
 }
 
-func planCommand(command Command, ctx *gogendaContext) (err error) {
+func planCommand(command Command, srv *calendar.Service) (err error) {
 	// Get plan of all day
 	begin := time.Now()
 	begin = time.Date(begin.Year(), begin.Month(), begin.Day(), 0, 0, 0, 0, time.Local)
@@ -158,24 +154,24 @@ func planCommand(command Command, ctx *gogendaContext) (err error) {
 
 	end := time.Date(begin.Year(), begin.Month(), begin.Day(), 23, 59, 59, 0, time.Local)
 
-	cals, err := getActivitiesBetweenDates(begin.Format(time.RFC3339), end.Format(time.RFC3339), ctx.srv)
-	displayInfoHeading(ctx, " Events of "+begin.Format("01/02"))
+	cals, err := api.GetActivitiesBetweenDates(begin.Format(time.RFC3339), end.Format(time.RFC3339), srv)
+	colors.DisplayInfoHeading(" Events of " + begin.Format("01/02"))
 	if cals == nil {
-		displayError(ctx, "Error")
+		colors.DisplayError("Error")
 		return err
 	}
 	events := cals.Items
 	for _, event := range events {
 		beginTime, _ := time.Parse(time.RFC3339, event.Start.DateTime)
 		endTime, _ := time.Parse(time.RFC3339, event.End.DateTime)
-		color, _ := getColorNameFromColorID(event.ColorId)
-		category := confGetNameFromColor(color, ctx.configuration)
+		color, _ := api.GetColorNameFromColorID(event.ColorId)
+		category := configuration.GetNameFromColor(color)
 		if category == "default" {
 			category = ""
 		}
 		category += "]"
 		category = fmt.Sprintf("[%-6s", category)
-		displayOk(ctx, " [ "+beginTime.Format("15:04")+" -> "+endTime.Format("15:04")+" ] "+category+" : "+event.Summary)
+		colors.DisplayOk(" [ " + beginTime.Format("15:04") + " -> " + endTime.Format("15:04") + " ] " + category + " : " + event.Summary)
 	}
 
 	if len(command) > 2 {
@@ -196,14 +192,14 @@ func planCommand(command Command, ctx *gogendaContext) (err error) {
 		command[1] = begin.Format("2006/01/02")
 		command[2] = strconv.Itoa(nbToRedo)
 		// Recursive call
-		planCommand(command, ctx)
+		api.PlanCommand(command, srv)
 	}
 	return err
 }
 
 // Add an event sometime
 // If you want to add it now, you better use startCommand
-func addCommand(command Command, ctx *gogendaContext) (err error) {
+func addCommand(command Command, srv *calendar.Service) (err error) {
 
 	var date time.Time
 	var endDate time.Time
@@ -217,10 +213,10 @@ func addCommand(command Command, ctx *gogendaContext) (err error) {
 	askDate := func(date *time.Time) {
 		askAgain := true
 		for askAgain {
-			inputStr := inputFromUser("date of event")
+			inputStr := utilities.InputFromUser("date of event")
 			t, err := dateParser(inputStr)
 			if err != nil {
-				displayError(ctx, "Wrong formatting !")
+				colors.DisplayError("Wrong formatting !")
 			} else {
 				*date = time.Date(t.Year(), t.Month(), t.Day(), date.Hour(), date.Minute(), date.Second(), 0, time.Local)
 				askAgain = false
@@ -230,10 +226,10 @@ func addCommand(command Command, ctx *gogendaContext) (err error) {
 	askTime := func(date *time.Time) {
 		askAgain := true
 		for askAgain {
-			inputStr := inputFromUser("begin time of event")
+			inputStr := utilities.InputFromUser("begin time of event")
 			t, err := timeParser(inputStr)
 			if err != nil {
-				displayError(ctx, "Wrong formatting !")
+				colors.DisplayError("Wrong formatting !")
 			} else {
 				*date = time.Date(date.Year(), date.Month(), date.Day(), t.Hour(), t.Minute(), t.Second(), 0, time.Local)
 				askAgain = false
@@ -243,14 +239,14 @@ func addCommand(command Command, ctx *gogendaContext) (err error) {
 	askEndTime := func(endDate *time.Time) {
 		askAgain := true
 		for askAgain {
-			inputStr := inputFromUser("end time of event")
+			inputStr := utilities.InputFromUser("end time of event")
 			t, err := timeParser(inputStr)
 			if err != nil {
-				displayError(ctx, "Wrong formatting !")
+				colors.DisplayError("Wrong formatting !")
 			} else {
 				*endDate = time.Date(date.Year(), date.Month(), date.Day(), t.Hour(), t.Minute(), t.Second(), 0, time.Local)
 				if !endDate.After(date) {
-					displayError(ctx, "End time cannot be before start time !")
+					colors.DisplayError("End time cannot be before start time !")
 				} else {
 					askAgain = false
 				}
@@ -258,10 +254,10 @@ func addCommand(command Command, ctx *gogendaContext) (err error) {
 		}
 	}
 	askName := func(name *string) {
-		*name = inputFromUser("name of event")
+		*name = utilities.InputFromUser("name of event")
 	}
 	askCategory := func(category *string) {
-		*category = inputFromUser("category of event")
+		*category = utilities.InputFromUser("category of event")
 	}
 
 	if len(command) == 2 {
@@ -285,7 +281,7 @@ func addCommand(command Command, ctx *gogendaContext) (err error) {
 		// date time
 		// date category
 
-		errTime, errDate := buildDateFromTimeDate(command[1], command[2], &date)
+		errTime, errDate := utilities.BuildDateFromTimeDate(command[1], command[2], &date)
 		if errTime == nil && errDate == nil {
 			isTimeSet = true
 			isDateSet = true
@@ -295,7 +291,7 @@ func addCommand(command Command, ctx *gogendaContext) (err error) {
 		} else {
 			// date time
 			// date category
-			errTime, errDate := buildDateFromDateTime(command[1], command[2], &date)
+			errTime, errDate := utilities.BuildDateFromDateTime(command[1], command[2], &date)
 			if errTime == nil && errDate == nil {
 				isTimeSet = true
 				isDateSet = true
@@ -315,13 +311,13 @@ func addCommand(command Command, ctx *gogendaContext) (err error) {
 		// date time category
 		// date category name
 
-		errTime, errDate := buildDateFromTimeDate(command[1], command[2], &date)
+		errTime, errDate := utilities.BuildDateFromTimeDate(command[1], command[2], &date)
 		if errTime == nil && errDate == nil {
 			// time date category
 			isTimeSet = true
 			isDateSet = true
 
-			endDate, err = timeParser(command[3])
+			endDate, err = utilities.TimeParser(command[3])
 			if err == nil { // we have the end hour. Still need to fix the day
 				endDate = time.Date(date.Year(), date.Month(), date.Day(), endDate.Hour(), endDate.Minute(), endDate.Second(), 0, time.Local)
 				if date.After(endDate) { // like if the user wanted an event between 2 days (23:00 -> 01:00)
@@ -341,13 +337,13 @@ func addCommand(command Command, ctx *gogendaContext) (err error) {
 			// check if date time endDate
 			// check if date time category
 			// check if date category name
-			errTime, errDate := buildDateFromDateTime(command[1], command[2], &date)
+			errTime, errDate := utilities.BuildDateFromDateTime(command[1], command[2], &date)
 			if errTime == nil && errDate == nil {
 				// date time category
 				isTimeSet = true
 				isDateSet = true
 				// Check if date time endDate
-				endDate, err = timeParser(command[3])
+				endDate, err = utilities.TimeParser(command[3])
 				if err == nil { // we have the end hour. Still need to fix the day
 					endDate = time.Date(date.Year(), date.Month(), date.Day(), endDate.Hour(), endDate.Minute(), endDate.Second(), 0, time.Local)
 					if date.After(endDate) { // like if the user wanted an event between 2 days (23:00 -> 01:00)
@@ -403,19 +399,19 @@ func addCommand(command Command, ctx *gogendaContext) (err error) {
 		askName(&name)
 	}
 
-	color := confGetColorFromName(category, ctx.configuration)
-	displayOk(ctx, "Adding event "+name+" of category "+category+" starting "+date.Format("2006-01-02")+" at "+date.Format("15:04")+" until "+endDate.Format("15:04"))
-	_, err = insertActivity(name, color, date, endDate, ctx.srv)
+	color := configuration.GetColorFromName(category)
+	displayOk("Adding event " + name + " of category " + category + " starting " + date.Format("2006-01-02") + " at " + date.Format("15:04") + " until " + endDate.Format("15:04"))
+	_, err = api.InsertActivity(name, color, date, endDate, ctx.srv)
 	if err != nil {
-		displayError(ctx, err.Error())
+		api.DisplayError(err.Error())
 	}
 	return err
 }
 
 // Print usage
-func helpCommand(command Command, ctx *gogendaContext) {
+func helpCommand(command Command, isShell bool) {
 	prefix := ""
-	if !ctx.isShell {
+	if isShell {
 		prefix = " gogenda"
 	}
 	specificHelp := ""
@@ -423,15 +419,15 @@ func helpCommand(command Command, ctx *gogendaContext) {
 		specificHelp = command[1]
 	}
 	if specificHelp == "" {
-		displayInfoHeading(ctx, "== GoGenda ==")
+		colors.DisplayInfoHeading("== GoGenda ==")
 		fmt.Println(" GoGenda helps you keep track of your activities")
 		fmt.Println(" Type Gogenda help (command) to have more help for a specific command")
-		displayInfoHeading(ctx, " = Commands = ")
+		colors.DisplayInfoHeading(" = Commands = ")
 		fmt.Println("")
-		if !ctx.isShell {
+		if !isShell {
 			fmt.Println(" gogenda shell - Launch the shell UI")
 		}
-		for _, category := range ctx.configuration.Categories {
+		for _, category := range configuration.GetConfig().Categories {
 			fmt.Println(prefix + " start " + category.Name + " - Add an event in " + category.Color)
 		}
 		fmt.Println(prefix + " stop - Stop the current activity")
