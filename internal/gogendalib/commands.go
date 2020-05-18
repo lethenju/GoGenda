@@ -152,18 +152,33 @@ func planCommand(command Command, srv *calendar.Service) (err error) {
 
 	}
 
-	end := time.Date(begin.Year(), begin.Month(), begin.Day(), 23, 59, 59, 0, time.Local)
+	nbDays := 1
+	if len(command) > 2 {
+		// Number of days to do
+		nbDays, err = strconv.Atoi(command[2])
+		if err != nil {
+			return errors.New("Wrong argument '" + command[2] + "', should be a number")
+		}
+	}
+	end := begin.Add(time.Duration(24*nbDays) * time.Hour)
 
 	cals, err := api.GetActivitiesBetweenDates(begin.Format(time.RFC3339), end.Format(time.RFC3339), srv)
-	colors.DisplayInfoHeading(" Events of " + begin.Format("01/02"))
 	if cals == nil {
 		colors.DisplayError("Error")
 		return err
 	}
 	events := cals.Items
+
+	var lastevent time.Time
+	if len(events) > 0 {
+		lastevent = time.Now()
+	}
 	for _, event := range events {
 		beginTime, _ := time.Parse(time.RFC3339, event.Start.DateTime)
 		endTime, _ := time.Parse(time.RFC3339, event.End.DateTime)
+		if beginTime.Day() != lastevent.Day() {
+			colors.DisplayInfoHeading(" Events of " + beginTime.Format("01/02"))
+		}
 		color, _ := api.GetColorNameFromColorID(event.ColorId)
 		category := configuration.GetNameFromColor(color)
 		if category == "default" {
@@ -172,28 +187,9 @@ func planCommand(command Command, srv *calendar.Service) (err error) {
 		category += "]"
 		category = fmt.Sprintf("[%-6s", category)
 		colors.DisplayOk(" [ " + beginTime.Format("15:04") + " -> " + endTime.Format("15:04") + " ] " + category + " : " + event.Summary)
+		lastevent = beginTime
 	}
 
-	if len(command) > 2 {
-		// Number of days to do
-		nbToRedo, err := strconv.Atoi(command[2])
-		if err != nil {
-			return err
-		}
-		// Removing a day (that has just be done)
-		nbToRedo--
-		// If we got to zero, we can return, its fine
-		if nbToRedo == 0 {
-			return nil
-		}
-		// adding a day
-		begin = begin.Add(24 * time.Hour)
-		// Putting it in the command
-		command[1] = begin.Format("2006/01/02")
-		command[2] = strconv.Itoa(nbToRedo)
-		// Recursive call
-		planCommand(command, srv)
-	}
 	return err
 }
 
