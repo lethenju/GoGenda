@@ -62,7 +62,7 @@ func LoadConfiguration(file string) (err error) {
 	}
 	defer f.Close()
 	conf = Config{}
-	err = json.NewDecoder(f).Decode(conf)
+	err = json.NewDecoder(f).Decode(&conf)
 	return err
 }
 
