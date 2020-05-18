@@ -10,19 +10,20 @@ import (
 	"google.golang.org/api/calendar/v3"
 
 	"github.com/lethenju/gogenda/internal/current_activity"
+	"github.com/lethenju/gogenda/internal/gogendalib"
 	"github.com/lethenju/gogenda/pkg/colors"
-	"github.com/lethenju/gogenda/pkg/google_agenda_api"
+	api "github.com/lethenju/gogenda/pkg/google_agenda_api"
 )
 
-// Gogenda can be called as a shell, to have a shell like environement for long periods of usage
-func shell(srv *calendar.Service, version string) {
+//Shell : Gogenda can be called as a shell, to have a shell like environement for long periods of usage
+func Shell(srv *calendar.Service, version string) {
 	runningFlag := true
 
 	colors.DisplayInfoHeading("Welcome to GoGenda!")
 	colors.DisplayInfo("Version number : " + version)
 
 	// Asking the user if he's still doing the last event on google agenda
-	lastEvent, err := google_agenda_api.GetLastEvent(srv)
+	lastEvent, err := api.GetLastEvent(srv)
 	if err == nil && lastEvent.Id != "" {
 		fmt.Println("Last event : " + lastEvent.Summary)
 		fmt.Println("Are you still doing that ? (y/n)")
@@ -73,15 +74,16 @@ func shell(srv *calendar.Service, version string) {
 		}
 		if strings.ToUpper(command[0]) == "EXIT" {
 			fmt.Println("See you later !")
-			if act != nil {
-				api.StopActivity(act, srv)
+			currentActivity, err := current_activity.GetCurrentActivity()
+			if err == nil {
+				api.StopActivity(currentActivity, srv)
 			}
 			runningFlag = false
 			break
 		}
-		res := CommandHandler(command, ctx, true)
+		res := gogendalib.CommandHandler(command, srv, true)
 		if res != nil {
-			displayError(ctx, "ERROR : "+res.Error())
+			colors.DisplayError("ERROR : " + res.Error())
 		}
 	}
 

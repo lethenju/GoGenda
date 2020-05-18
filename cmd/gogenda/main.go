@@ -35,6 +35,7 @@ import (
 	"os/user"
 	"strings"
 
+	gogenda "github.com/lethenju/gogenda/internal"
 	"github.com/lethenju/gogenda/internal/current_activity"
 	"github.com/lethenju/gogenda/internal/gogendalib"
 
@@ -57,23 +58,22 @@ func main() {
 	srv, err := api.Connect()
 
 	if err != nil {
-		displayError(err)
+		colors.DisplayError(err.Error())
 		return
 	}
 
 	configuration.LoadConfiguration(userDir + "/.gogenda/config.json")
 	if err != nil {
 		// Conf doesnt exist
-		displayError("Could not open ~/.gogenda/config.json")
+		colors.DisplayError("Could not open ~/.gogenda/config.json")
 	}
 	args := os.Args
 	if len(args) > 1 {
 		// Launch shell based UI
 		if strings.ToUpper(args[1]) == "SHELL" || strings.ToUpper(args[1]) == "-SH" {
-			gogenda.shell(srv)
+			gogenda.Shell(srv, version)
 			return
 		}
-		ctx.isShell = false
 
 		if strings.ToUpper(args[1]) == "HELP" || strings.ToUpper(args[1]) == "--HELP" {
 			gogendalib.CommandHandler([]string{"HELP"}, srv, false)
@@ -82,8 +82,8 @@ func main() {
 
 		// For the other commands than start its obvious he/she is
 		if strings.ToUpper(args[1]) != "START" {
-			currentActivity, _ = api.GetLastEvent(srv)
-			current_activity.SetCurrentActivity(currentActivity)
+			currentActivity, _ := api.GetLastEvent(srv)
+			current_activity.SetCurrentActivity(&currentActivity)
 		}
 		err = gogendalib.CommandHandler(args[1:], srv, false)
 		if err != nil {
