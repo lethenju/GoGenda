@@ -406,13 +406,30 @@ func addCommand(command Command, srv *calendar.Service) (err error) {
 }
 
 func statsCommand(command Command, srv *calendar.Service) (err error) {
-	now := time.Now()
-	beginToday := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local)
-	endToday := beginToday.Add(time.Duration(24) * time.Hour)
-	// Start impl with today as zero argument
+	// Get plan of all day
+	begin := time.Now()
+	begin = time.Date(begin.Year(), begin.Month(), begin.Day(), 0, 0, 0, 0, time.Local)
+	if len(command) > 1 {
+		begin, err = utilities.DateParser(command[1])
+		if err != nil {
+			return err
+		}
+
+	}
+
+	nbDays := 1
+	if len(command) > 2 {
+		// Number of days to do
+		nbDays, err = strconv.Atoi(command[2])
+		if err != nil {
+			return errors.New("Wrong argument '" + command[2] + "', should be a number")
+		}
+	}
+	end := begin.Add(time.Duration(24*nbDays) * time.Hour)
+
 	events, err := api.GetActivitiesBetweenDates(
-		beginToday.Format(time.RFC3339),
-		endToday.Format(time.RFC3339), srv)
+		begin.Format(time.RFC3339),
+		end.Format(time.RFC3339), srv)
 	if err != nil {
 		return err
 	}
@@ -430,6 +447,7 @@ func statsCommand(command Command, srv *calendar.Service) (err error) {
 	var total time.Duration
 	for _, item := range items {
 		if lastColorCode != item.ColorId {
+			lastColorCode = item.ColorId
 			colors.DisplayOk("      Total : " + total.String())
 			total = 0
 			// retrieve category
