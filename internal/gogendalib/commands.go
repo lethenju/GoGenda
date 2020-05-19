@@ -34,6 +34,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -402,6 +403,34 @@ func addCommand(command Command, srv *calendar.Service) (err error) {
 		colors.DisplayError(err.Error())
 	}
 	return err
+}
+
+func statsCommand(command Command, srv *calendar.Service) (err error) {
+	now := time.Now()
+	beginToday := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local)
+	endToday := beginToday.Add(time.Duration(24) * time.Hour)
+	// Start impl with today as zero argument
+	events, err := api.GetActivitiesBetweenDates(
+		beginToday.Format(time.RFC3339),
+		endToday.Format(time.RFC3339), srv)
+	if err != nil {
+		return err
+	}
+	items := events.Items
+
+	if err != nil {
+		return err
+	}
+	// sort by category
+	sort.Slice(items, func(p, q int) bool {
+		return items[p].ColorId < items[q].ColorId
+	})
+
+	//	for _ item := range items {
+	// retrieve category
+
+	//	}
+	return nil
 }
 
 // Print usage
