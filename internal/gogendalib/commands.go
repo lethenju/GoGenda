@@ -447,8 +447,10 @@ func statsCommand(command Command, srv *calendar.Service) (err error) {
 	var total time.Duration
 	for _, item := range items {
 		if lastColorCode != item.ColorId {
+			if lastColorCode != "" {
+				colors.DisplayOk("      Total : " + total.String())
+			}
 			lastColorCode = item.ColorId
-			colors.DisplayOk("      Total : " + total.String())
 			total = 0
 			// retrieve category
 			colorName, _ := api.GetColorNameFromColorID(item.ColorId)
