@@ -426,10 +426,23 @@ func statsCommand(command Command, srv *calendar.Service) (err error) {
 		return items[p].ColorId < items[q].ColorId
 	})
 
-	//	for _ item := range items {
-	// retrieve category
-
-	//	}
+	lastColorCode := ""
+	var total time.Duration
+	for _, item := range items {
+		if lastColorCode != item.ColorId {
+			colors.DisplayInfo("      Total : " + total)
+			total = 0
+			// retrieve category
+			colorName, _ := api.GetColorNameFromColorID(item.ColorId)
+			category := configuration.GetNameFromColor(colorName)
+			colors.DisplayInfoHeading("=== " + category + " ===")
+		}
+		startTime, _ := time.Parse(time.RFC3339, item.Start.DateTime)
+		endTime, _ := time.Parse(time.RFC3339, item.End.DateTime)
+		duration := endTime.Sub(startTime)
+		total += duration
+		colors.DisplayOk(" [ " + startTime.Format("15:04") + " -> " + endTime.Format("15:04") + " ] " + duration.String() + " : " + item.Summary)
+	}
 	return nil
 }
 
