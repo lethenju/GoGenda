@@ -82,6 +82,13 @@ func CommandHandler(command []string, srv *calendar.Service, isShell bool) (err 
 			return err
 		}
 		break
+	case "STATS":
+		// add an event to the calendar at a specific date
+		err = statsCommand(command, srv)
+		if err != nil {
+			return err
+		}
+		break
 	case "HELP":
 		// Show help
 		helpCommand(command, isShell)
