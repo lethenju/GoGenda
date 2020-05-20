@@ -494,7 +494,8 @@ func helpCommand(command Command, isShell bool) {
 		fmt.Println(prefix + " stop - Stop the current activity")
 		fmt.Println(prefix + " rename - Rename the current activity")
 		fmt.Println(prefix + " delete - Delete the current activity")
-		fmt.Println(prefix + " plan - shows events of the day. You can call it alone or with a date param.")
+		fmt.Println(prefix + " plan - shows events of one or several days. You can call it alone or with a date param.")
+		fmt.Println(prefix + " stats - shows statistics about your time spent in each category")
 		fmt.Println(prefix + " add - add an event to the planning. You can call it alone or with some params.")
 		fmt.Println(prefix + " help - shows the help")
 		fmt.Println(prefix + " version - shows the current version")
@@ -518,10 +519,14 @@ func helpCommand(command Command, isShell bool) {
 		fmt.Println("  | (date) (time) (category) (name...)")
 		fmt.Println("  - (date) (category) (name)")
 	} else if strings.ToUpper(specificHelp) == "PLAN" {
-		fmt.Println(prefix + " plan - shows events of the day. You can call it alone or with a date param.")
-		fmt.Println("  | The program will get you today's planning if you dont specify a param")
+		fmt.Println(prefix + " plan - shows events of a one of several days. You can call it alone or with a date param.")
+		fmt.Println("  | The program will get you today's planning if you don't specify a param")
 		fmt.Println("  - (date)")
 		fmt.Println("  - (date) (nb of days)")
+	} else if strings.ToUpper(specificHelp) == "STATS" {
+		fmt.Println(prefix + " stats - shows statistics about your time spent in each category")
+		fmt.Println("  | The program will get you today's statistics if you don't specify a param")
+		fmt.Println("  - (date)")
 	}
 
 	if specificHelp != "" {
