@@ -471,7 +471,7 @@ func statsCommand(command Command, srv *calendar.Service) (err error) {
 // Print usage
 func helpCommand(command Command, isShell bool) {
 	prefix := ""
-	if isShell {
+	if !isShell {
 		prefix = " gogenda"
 	}
 	specificHelp := ""
