@@ -36,10 +36,10 @@ import (
 	"strings"
 
 	gogenda "github.com/lethenju/gogenda/internal"
+	"github.com/lethenju/gogenda/internal/cmd_options"
+	"github.com/lethenju/gogenda/internal/configuration"
 	"github.com/lethenju/gogenda/internal/current_activity"
 	"github.com/lethenju/gogenda/internal/gogendalib"
-
-	"github.com/lethenju/gogenda/internal/configuration"
 	"github.com/lethenju/gogenda/pkg/colors"
 	api "github.com/lethenju/gogenda/pkg/google_agenda_api"
 )
@@ -52,6 +52,18 @@ func main() {
 	usr, _ := user.Current()
 	userDir := usr.HomeDir
 
+	cmd_options.Init()
+	args := os.Args
+	{
+		var filteredArgs []string
+		// Remove options from args
+		for _, arg := range args {
+			if arg[0] != '-' {
+				filteredArgs = append(filteredArgs, arg)
+			}
+		}
+		args = filteredArgs
+	}
 	// Setup colors printing
 	colors.SetupColors()
 	// Connect to API
@@ -67,15 +79,9 @@ func main() {
 		// Conf doesnt exist
 		colors.DisplayError("Could not open ~/.gogenda/config.json")
 	}
-	args := os.Args
-	if len(args) > 1 {
-		// Launch shell based UI
-		if strings.ToUpper(args[1]) == "SHELL" || strings.ToUpper(args[1]) == "-SH" {
-			gogenda.Shell(srv, version)
-			return
-		}
 
-		if strings.ToUpper(args[1]) == "HELP" || strings.ToUpper(args[1]) == "--HELP" {
+	if len(args) > 1 {
+		if strings.ToUpper(args[1]) == "HELP" {
 			gogendalib.CommandHandler([]string{"HELP"}, srv, false)
 			return
 		}
@@ -89,7 +95,14 @@ func main() {
 		if err != nil {
 			colors.DisplayError("ERROR : " + err.Error())
 		}
+	} else if cmd_options.GetNumberOfOptions() == 0 {
+		// gogenda was called alone
+		gogendalib.CommandHandler([]string{"HELP"}, srv, false)
+	}
+	// Launch shell based UI
+	if cmd_options.IsOptionSet("shell") {
+		gogenda.Shell(srv, version)
 		return
 	}
-	gogendalib.CommandHandler([]string{"HELP"}, srv, false)
+
 }

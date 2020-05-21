@@ -485,7 +485,7 @@ func helpCommand(command Command, isShell bool) {
 		colors.DisplayInfoHeading(" = Commands = ")
 		fmt.Println("")
 		if !isShell {
-			fmt.Println(" gogenda shell - Launch the shell UI")
+			fmt.Println(" gogenda -i - Launch the shell UI")
 		}
 		config, _ := configuration.GetConfig()
 		for _, category := range config.Categories {
