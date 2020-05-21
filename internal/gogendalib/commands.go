@@ -503,7 +503,6 @@ func helpCommand(command Command, isShell bool) {
 		fmt.Println(prefix + " stats - shows statistics about your time spent in each category")
 		fmt.Println(prefix + " add - add an event to the planning. You can call it alone or with some params.")
 		fmt.Println(prefix + " help - show gogenda help (add a command name if you want specific command help)")
-		fmt.Println(prefix + " version - shows the current version")
 	} else if strings.ToUpper(specificHelp) == "ADD" {
 		fmt.Println(prefix + " add - add an event to the planning. You can call it alone or with some params.")
 		fmt.Println("  | the program will ask you the remaining parameters of the event")
