@@ -35,11 +35,16 @@ var setOptions []string
 
 // Init parses the arguments with the 'flag' package and set them in the local private setOptions variable
 func Init() []string {
-	isShell := flag.Bool("i", false, "Interactive shell")
+	shell := flag.Bool("i", false, "Interactive shell")
+	help := flag.Bool("h", false, "Help")
+
 	flag.Parse()
 
-	if *isShell {
+	if *shell {
 		setOptions = append(setOptions, "shell")
+	}
+	if *help {
+		setOptions = append(setOptions, "help")
 	}
 	return flag.Args()
 }

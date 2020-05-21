@@ -31,7 +31,6 @@ SOFTWARE.
 package main
 
 import (
-	"fmt"
 	"os/user"
 	"strings"
 
@@ -69,13 +68,17 @@ func main() {
 		colors.DisplayError("Could not open ~/.gogenda/config.json")
 	}
 
-	if len(args) > 0 {
-		if strings.ToUpper(args[0]) == "HELP" {
+	if cmd_options.IsOptionSet("help") {
+		if len(args) > 0 {
+			gogendalib.CommandHandler([]string{"HELP", args[0]}, srv, false)
+		} else {
 			gogendalib.CommandHandler([]string{"HELP"}, srv, false)
-			return
 		}
+		return
+	}
 
-		fmt.Println(args)
+	if len(args) > 0 {
+
 		// For the other commands than start its obvious he/she is
 		if strings.ToUpper(args[0]) != "START" {
 			currentActivity, _ := api.GetLastEvent(srv)

@@ -481,12 +481,14 @@ func helpCommand(command Command, isShell bool) {
 	if specificHelp == "" {
 		colors.DisplayInfoHeading("== GoGenda ==")
 		fmt.Println(" GoGenda helps you keep track of your activities")
-		fmt.Println(" Type Gogenda help (command) to have more help for a specific command")
+		fmt.Println(" Type Gogenda -h (command) to have more help for a specific command")
 		fmt.Println("")
-		colors.DisplayInfoHeading(" = Options = ")
-		colors.DisplayOk("Important : options have to be used before command arguments !")
 		if !isShell {
-			fmt.Println(" gogenda -i - Launch the shell UI")
+			colors.DisplayInfoHeading(" = Options = ")
+			colors.DisplayOk("Important : options have to be used before command arguments !")
+			fmt.Println(" gogenda -i           - Launch the shell UI")
+			fmt.Println(" gogenda -h (command) - shows the help")
+			fmt.Println("")
 		}
 		colors.DisplayInfoHeading(" = Commands = ")
 
@@ -500,7 +502,7 @@ func helpCommand(command Command, isShell bool) {
 		fmt.Println(prefix + " plan - shows events of one or several days. You can call it alone or with a date param.")
 		fmt.Println(prefix + " stats - shows statistics about your time spent in each category")
 		fmt.Println(prefix + " add - add an event to the planning. You can call it alone or with some params.")
-		fmt.Println(prefix + " help - shows the help")
+		fmt.Println(prefix + " help - show gogenda help (add a command name if you want specific command help)")
 		fmt.Println(prefix + " version - shows the current version")
 	} else if strings.ToUpper(specificHelp) == "ADD" {
 		fmt.Println(prefix + " add - add an event to the planning. You can call it alone or with some params.")
