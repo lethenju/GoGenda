@@ -35,7 +35,7 @@ import (
 	"strings"
 
 	gogenda "github.com/lethenju/gogenda/internal"
-	"github.com/lethenju/gogenda/internal/cmd_options"
+	cmdOptions "github.com/lethenju/gogenda/internal/cmd_options"
 	"github.com/lethenju/gogenda/internal/configuration"
 	"github.com/lethenju/gogenda/internal/current_activity"
 	"github.com/lethenju/gogenda/internal/gogendalib"
@@ -51,7 +51,7 @@ func main() {
 	usr, _ := user.Current()
 	userDir := usr.HomeDir
 
-	args := cmd_options.Init()
+	args := cmdOptions.Init()
 	// Setup colors printing
 	colors.SetupColors()
 	// Connect to API
@@ -61,14 +61,18 @@ func main() {
 		colors.DisplayError(err.Error())
 		return
 	}
-
-	configuration.LoadConfiguration(userDir + "/.gogenda/config.json")
+	config, err := cmdOptions.GetStringOption("config")
+	if err != nil {
+		// Load default configuration
+		config = userDir + "/.gogenda/config.json"
+	}
+	// Load user defined config (absolute path)
+	err = configuration.LoadConfiguration(config)
 	if err != nil {
 		// Conf doesnt exist
-		colors.DisplayError("Could not open ~/.gogenda/config.json")
+		colors.DisplayError("Could not open " + config)
 	}
-
-	if cmd_options.IsOptionSet("help") {
+	if cmdOptions.IsOptionSet("help") {
 		if len(args) > 0 {
 			gogendalib.CommandHandler([]string{"HELP", args[0]}, srv, false)
 		} else {
@@ -88,12 +92,12 @@ func main() {
 		if err != nil {
 			colors.DisplayError("ERROR : " + err.Error())
 		}
-	} else if cmd_options.GetNumberOfOptions() == 0 {
+	} else if cmdOptions.GetNumberOfOptions() == 0 {
 		// gogenda was called alone
 		gogendalib.CommandHandler([]string{"HELP"}, srv, false)
 	}
 	// Launch shell based UI
-	if cmd_options.IsOptionSet("shell") {
+	if cmdOptions.IsOptionSet("shell") {
 		gogenda.Shell(srv, version)
 		return
 	}

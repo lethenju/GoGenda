@@ -35,7 +35,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/lethenju/gogenda/internal/cmd_options"
+	cmdOptions "github.com/lethenju/gogenda/internal/cmd_options"
 	"github.com/lethenju/gogenda/internal/configuration"
 	"github.com/lethenju/gogenda/internal/utilities"
 	"github.com/lethenju/gogenda/pkg/colors"
@@ -101,7 +101,7 @@ func statsCommand(command Command, srv *calendar.Service) (err error) {
 		endTime, _ := time.Parse(time.RFC3339, item.End.DateTime)
 		duration := endTime.Sub(startTime)
 		total += duration
-		if !cmd_options.IsOptionSet("compact") {
+		if !cmdOptions.IsOptionSet("compact") {
 			colors.DisplayOk(" [ " + startTime.Format("15:04") + " -> " + endTime.Format("15:04") + " ] " + duration.String() + " : " + item.Summary)
 		}
 	}

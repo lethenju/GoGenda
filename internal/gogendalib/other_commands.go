@@ -55,8 +55,10 @@ func helpCommand(command Command, isShell bool) {
 		if !isShell {
 			colors.DisplayInfoHeading(" = Options = ")
 			colors.DisplayOk("Important : options have to be used before command arguments !")
-			fmt.Println(" gogenda -i           - Launch the shell UI")
-			fmt.Println(" gogenda -h (command) - shows the help")
+			fmt.Println(" gogenda -i              - Launch the shell UI")
+			fmt.Println(" gogenda -h              - shows the help")
+			fmt.Println(" gogenda -compact        - Have minimalist output")
+			fmt.Println(" gogenda -config='path'  - Use a custom config file (absolute path only)")
 			fmt.Println("")
 		}
 		colors.DisplayInfoHeading(" = Commands = ")

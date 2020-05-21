@@ -27,40 +27,53 @@ SOFTWARE.
  @Author : Julien LE THENO
  =============================================
 */
-package cmd_options
+package cmdOptions
 
-import "flag"
+import (
+	"errors"
+	"flag"
+)
 
-var setOptions []string
+var setOptions map[string]string
 
 // Init parses the arguments with the 'flag' package and set them in the local private setOptions variable
 func Init() []string {
+	setOptions = make(map[string]string)
+
 	shell := flag.Bool("i", false, "Interactive shell")
 	help := flag.Bool("h", false, "Help")
 	compact := flag.Bool("compact", false, "Compact output")
+	config := flag.String("config", "", "Custom configuration")
 
 	flag.Parse()
 
 	if *shell {
-		setOptions = append(setOptions, "shell")
+		setOptions["shell"] = "true"
 	}
 	if *help {
-		setOptions = append(setOptions, "help")
+		setOptions["help"] = "true"
 	}
 	if *compact {
-		setOptions = append(setOptions, "compact")
+		setOptions["compact"] = "true"
+	}
+	if *config != "" {
+		setOptions["config"] = *config
 	}
 	return flag.Args()
 }
 
 // IsOptionSet checks if the option given in parameters had been set by the user
 func IsOptionSet(option string) bool {
-	for _, opt := range setOptions {
-		if opt == option {
-			return true
-		}
+	return setOptions[option] != ""
+}
+
+// GetStringOption returns the string value of a option
+func GetStringOption(option string) (string, error) {
+	ret := setOptions[option]
+	if ret == "" {
+		return "", errors.New("This option is not set")
 	}
-	return false
+	return ret, nil
 }
 
 // GetNumberOfOptions returns the number of options that had been set
