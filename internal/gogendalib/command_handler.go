@@ -36,7 +36,7 @@ import (
 	"google.golang.org/api/calendar/v3"
 )
 
-// The commandHandler takes the command in parameter and dispatchs it to the different command methods in command.go
+// CommandHandler takes the command in parameter and dispatchs it to the different command methods in command.go
 func CommandHandler(command []string, srv *calendar.Service, isShell bool) (err error) {
 	// Our command name is in the first argument
 	switch strings.ToUpper(command[0]) {
