@@ -482,11 +482,14 @@ func helpCommand(command Command, isShell bool) {
 		colors.DisplayInfoHeading("== GoGenda ==")
 		fmt.Println(" GoGenda helps you keep track of your activities")
 		fmt.Println(" Type Gogenda help (command) to have more help for a specific command")
-		colors.DisplayInfoHeading(" = Commands = ")
 		fmt.Println("")
+		colors.DisplayInfoHeading(" = Options = ")
+		colors.DisplayOk("Important : options have to be used before command arguments !")
 		if !isShell {
 			fmt.Println(" gogenda -i - Launch the shell UI")
 		}
+		colors.DisplayInfoHeading(" = Commands = ")
+
 		config, _ := configuration.GetConfig()
 		for _, category := range config.Categories {
 			fmt.Println(prefix + " start " + category.Name + " - Add an event in " + category.Color)

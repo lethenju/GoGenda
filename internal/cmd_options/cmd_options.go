@@ -34,13 +34,14 @@ import "flag"
 var setOptions []string
 
 // Init parses the arguments with the 'flag' package and set them in the local private setOptions variable
-func Init() {
+func Init() []string {
 	isShell := flag.Bool("i", false, "Interactive shell")
 	flag.Parse()
 
 	if *isShell {
 		setOptions = append(setOptions, "shell")
 	}
+	return flag.Args()
 }
 
 // IsOptionSet checks if the option given in parameters had been set by the user

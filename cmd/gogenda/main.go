@@ -31,7 +31,7 @@ SOFTWARE.
 package main
 
 import (
-	"flag"
+	"fmt"
 	"os/user"
 	"strings"
 
@@ -45,15 +45,14 @@ import (
 )
 
 // Version of the software
-const version = "0.2.0"
+const version = "0.2.1"
 
 // Main entry point
 func main() {
 	usr, _ := user.Current()
 	userDir := usr.HomeDir
 
-	cmd_options.Init()
-	args := flag.Args()
+	args := cmd_options.Init()
 	// Setup colors printing
 	colors.SetupColors()
 	// Connect to API
@@ -70,18 +69,19 @@ func main() {
 		colors.DisplayError("Could not open ~/.gogenda/config.json")
 	}
 
-	if len(args) > 1 {
-		if strings.ToUpper(args[1]) == "HELP" {
+	if len(args) > 0 {
+		if strings.ToUpper(args[0]) == "HELP" {
 			gogendalib.CommandHandler([]string{"HELP"}, srv, false)
 			return
 		}
 
+		fmt.Println(args)
 		// For the other commands than start its obvious he/she is
-		if strings.ToUpper(args[1]) != "START" {
+		if strings.ToUpper(args[0]) != "START" {
 			currentActivity, _ := api.GetLastEvent(srv)
 			current_activity.SetCurrentActivity(&currentActivity)
 		}
-		err = gogendalib.CommandHandler(args[1:], srv, false)
+		err = gogendalib.CommandHandler(args, srv, false)
 		if err != nil {
 			colors.DisplayError("ERROR : " + err.Error())
 		}
