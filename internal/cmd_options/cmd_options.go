@@ -37,6 +37,7 @@ var setOptions []string
 func Init() []string {
 	shell := flag.Bool("i", false, "Interactive shell")
 	help := flag.Bool("h", false, "Help")
+	compact := flag.Bool("compact", false, "Compact output")
 
 	flag.Parse()
 
@@ -45,6 +46,9 @@ func Init() []string {
 	}
 	if *help {
 		setOptions = append(setOptions, "help")
+	}
+	if *compact {
+		setOptions = append(setOptions, "compact")
 	}
 	return flag.Args()
 }
