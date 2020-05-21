@@ -31,7 +31,7 @@ SOFTWARE.
 package main
 
 import (
-	"os"
+	"flag"
 	"os/user"
 	"strings"
 
@@ -53,17 +53,7 @@ func main() {
 	userDir := usr.HomeDir
 
 	cmd_options.Init()
-	args := os.Args
-	{
-		var filteredArgs []string
-		// Remove options from args
-		for _, arg := range args {
-			if arg[0] != '-' {
-				filteredArgs = append(filteredArgs, arg)
-			}
-		}
-		args = filteredArgs
-	}
+	args := flag.Args()
 	// Setup colors printing
 	colors.SetupColors()
 	// Connect to API
