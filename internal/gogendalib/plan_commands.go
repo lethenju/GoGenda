@@ -75,6 +75,8 @@ func planCommand(command Command, srv *calendar.Service) (err error) {
 	var lastevent time.Time
 	if len(events) > 0 {
 		lastevent = time.Now()
+	} else {
+		colors.DisplayOk("No events found")
 	}
 	for _, event := range events {
 		beginTime, _ := time.Parse(time.RFC3339, event.Start.DateTime)
