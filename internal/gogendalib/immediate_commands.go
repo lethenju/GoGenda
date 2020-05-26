@@ -101,6 +101,8 @@ func stopCommand(srv *calendar.Service) (err error) {
 	}
 	err = api.StopActivity(currentActivity, srv)
 
+	current_activity.SetCurrentActivity(nil)
+
 	colors.DisplayOk("Successfully stopped the activity ! I hope it went well ")
 	return nil
 }
