@@ -151,8 +151,39 @@ func planCommand(command Command, srv *calendar.Service) (err error) {
 
 	switch action {
 	case "MOVE":
-		// Todo parse date and time
-		colors.DisplayOk("Moving element nb " + strconv.Itoa(index) + " : " + planBuffer.Events[index].Name)
+		// grab the old date and time
+		date, err := api.GetStartDateForEventID(planBuffer.Events[index].CalendarID, srv)
+		var t time.Time
+		// parse date and time
+		if len(command) == 3 || len(command) == 4 {
+			// PLAN ID date
+			// We need to change the date but not the time
+			dateParsed, err := utilities.DateParser(command[2])
+			date = time.Date(dateParsed.Year(), dateParsed.Month(), dateParsed.Day(), date.Hour(), date.Minute(), date.Second(), 0, time.Local)
+			if len(command) == 4 {
+				// PLAN ID date time
+				t, err = utilities.TimeParser(command[3])
+			}
+			if err != nil {
+				// PLAN ID time
+				t, err = utilities.TimeParser(command[2])
+				if len(command) == 4 {
+					// PLAN ID time date
+					dateParsed, err = utilities.DateParser(command[3])
+					date = time.Date(dateParsed.Year(), dateParsed.Month(), dateParsed.Day(), date.Hour(), date.Minute(), date.Second(), 0, time.Local)
+
+				}
+				if err != nil {
+					// incorrect date or time
+					return err
+				}
+			}
+		}
+		if !t.IsZero() {
+			date = time.Date(date.Year(), date.Month(), date.Day(), t.Hour(), t.Minute(), t.Second(), 0, time.Local)
+		}
+
+		colors.DisplayOk("Moving element nb " + strconv.Itoa(index) + " : " + planBuffer.Events[index].Name + "to date and time " + date.Format(time.UnixDate))
 		// Todo ask user if okay
 		colors.DisplayError("MOVE NOT IMPLEMENTED YET")
 		return err
