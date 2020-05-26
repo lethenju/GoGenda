@@ -97,6 +97,14 @@ func DeleteActivity(activity *calendar.Event, srv *calendar.Service) (err error)
 	return err
 }
 
+// DeleteActivityFromID : Deletes the activity related to the idgiven in parameters
+// Also give a pointer the the calendar service in order to send the api.
+func DeleteActivityFromID(EventID string, srv *calendar.Service) (err error) {
+	call := srv.Events.Delete("primary", EventID)
+	err = call.Do()
+	return err
+}
+
 // RenameActivity : Renames the activity given in parameters with the text parameter
 // Also give a pointer the the calendar service in order to send the api.
 func RenameActivity(activity *calendar.Event, text string, srv *calendar.Service) (err error) {

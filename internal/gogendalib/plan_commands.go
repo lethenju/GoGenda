@@ -184,18 +184,30 @@ func planCommand(command Command, srv *calendar.Service) (err error) {
 		}
 
 		colors.DisplayOk("Moving element nb " + strconv.Itoa(index) + " : " + planBuffer.Events[index].Name + "to date and time " + date.Format(time.UnixDate))
-		// Todo ask user if okay
-		colors.DisplayError("MOVE NOT IMPLEMENTED YET")
+		isOkay := utilities.AskOkFromUser("Are you okay with that operation ?")
+		if !isOkay {
+			colors.DisplayInfo("Aborting..")
+			return nil
+		}
+		//colors.DisplayError("MOVE NOT IMPLEMENTED YET")
 		return err
 	case "DELETE":
 		colors.DisplayOk("Removing element nb " + strconv.Itoa(index) + " : " + planBuffer.Events[index].Name)
-		// Todo ask user if okay
-		colors.DisplayError("DELETE NOT IMPLEMENTED YET")
+		isOkay := utilities.AskOkFromUser("Are you okay with that operation ?")
+		if !isOkay {
+			colors.DisplayInfo("Aborting..")
+			return nil
+		}
+		err = api.DeleteActivityFromID(planBuffer.Events[index].CalendarID, srv)
 		return err
 	case "RENAME":
 		// Todo get the new name
 		colors.DisplayOk("Renaming element nb " + strconv.Itoa(index) + " : " + planBuffer.Events[index].Name)
-		// Todo ask user if okay
+		isOkay := utilities.AskOkFromUser("Are you okay with that operation ?")
+		if !isOkay {
+			colors.DisplayInfo("Aborting..")
+			return nil
+		}
 		colors.DisplayError("MOVE NOT IMPLEMENTED YET")
 		return err
 	}
