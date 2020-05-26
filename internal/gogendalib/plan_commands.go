@@ -44,6 +44,7 @@ import (
 )
 
 func planCommand(command Command, srv *calendar.Service) (err error) {
+
 	// command[1] == action
 	// action could be SHOW, MOVE, DELETE, RENAME
 
@@ -68,42 +69,44 @@ func planCommand(command Command, srv *calendar.Service) (err error) {
 		}
 	}
 
-	// Get plan of all day
-	begin := time.Now()
-	begin = time.Date(begin.Year(), begin.Month(), begin.Day(), 0, 0, 0, 0, time.Local)
-	if len(command) > 1 {
-		begin, err = utilities.DateParser(command[1])
-		if err != nil {
+	if action == "SHOW" {
+		// init the plan structure
+		var planBuffer utilities.Plan
+
+		// Get plan of all day
+		begin := time.Now()
+		begin = time.Date(begin.Year(), begin.Month(), begin.Day(), 0, 0, 0, 0, time.Local)
+		if len(command) > 1 {
+			begin, err = utilities.DateParser(command[1])
+			if err != nil {
+				return err
+			}
+
+		}
+
+		nbDays := 1
+		if len(command) > 2 {
+			// Number of days to do
+			nbDays, err = strconv.Atoi(command[2])
+			if err != nil {
+				return errors.New("Wrong argument '" + command[2] + "', should be a number")
+			}
+		}
+		end := begin.Add(time.Duration(24*nbDays) * time.Hour)
+
+		cals, err := api.GetActivitiesBetweenDates(begin.Format(time.RFC3339), end.Format(time.RFC3339), srv)
+		if cals == nil {
+			colors.DisplayError("Error")
 			return err
 		}
+		events := cals.Items
 
-	}
-
-	nbDays := 1
-	if len(command) > 2 {
-		// Number of days to do
-		nbDays, err = strconv.Atoi(command[2])
-		if err != nil {
-			return errors.New("Wrong argument '" + command[2] + "', should be a number")
+		var lastevent time.Time
+		if len(events) > 0 {
+			lastevent = time.Now()
+		} else {
+			colors.DisplayOk("No events found")
 		}
-	}
-	end := begin.Add(time.Duration(24*nbDays) * time.Hour)
-
-	cals, err := api.GetActivitiesBetweenDates(begin.Format(time.RFC3339), end.Format(time.RFC3339), srv)
-	if cals == nil {
-		colors.DisplayError("Error")
-		return err
-	}
-	events := cals.Items
-
-	var lastevent time.Time
-	if len(events) > 0 {
-		lastevent = time.Now()
-	} else {
-		colors.DisplayOk("No events found")
-	}
-	switch action {
-	case "SHOW":
 		for i, event := range events {
 			beginTime, _ := time.Parse(time.RFC3339, event.Start.DateTime)
 			endTime, _ := time.Parse(time.RFC3339, event.End.DateTime)
@@ -119,15 +122,49 @@ func planCommand(command Command, srv *calendar.Service) (err error) {
 			category = fmt.Sprintf("[%-6s", category)
 			colors.DisplayOk("[" + strconv.Itoa(i) + "] [ " + beginTime.Format("15:04") + " -> " + endTime.Format("15:04") + " ] " + category + " : " + event.Summary)
 			lastevent = beginTime
+
+			// fill our data
+			var eventStored utilities.EventStored
+			eventStored.Name = event.Summary
+			eventStored.CalendarID = event.Id
+			planBuffer.Events = append(planBuffer.Events, eventStored)
 		}
+		// store our data
+		utilities.StorePlan(&planBuffer)
 		return err
+	}
+	// Load the plan data
+	planBuffer, err := utilities.LoadPlan()
+
+	if err != nil {
+		return errors.New("Please call 'PLAN SHOW' first before modifying an event we dont know about")
+	}
+	// Now we need to get the id
+	if len(command) == 1 {
+		return errors.New("Please give an id of an event to modify")
+	}
+	index, err := strconv.Atoi(command[1])
+	if err != nil {
+
+		return errors.New("Id should be a number, you gave :" + command[1])
+	}
+
+	switch action {
 	case "MOVE":
+		// Todo parse date and time
+		colors.DisplayOk("Moving element nb " + strconv.Itoa(index) + " : " + planBuffer.Events[index].Name)
+		// Todo ask user if okay
 		colors.DisplayError("MOVE NOT IMPLEMENTED YET")
 		return err
 	case "DELETE":
+		colors.DisplayOk("Removing element nb " + strconv.Itoa(index) + " : " + planBuffer.Events[index].Name)
+		// Todo ask user if okay
 		colors.DisplayError("DELETE NOT IMPLEMENTED YET")
 		return err
 	case "RENAME":
+		// Todo get the new name
+		colors.DisplayOk("Renaming element nb " + strconv.Itoa(index) + " : " + planBuffer.Events[index].Name)
+		// Todo ask user if okay
 		colors.DisplayError("MOVE NOT IMPLEMENTED YET")
 		return err
 	}
