@@ -105,11 +105,30 @@ func DeleteActivityFromID(EventID string, srv *calendar.Service) (err error) {
 	return err
 }
 
+// MoveActivityFromID : Moves the activity with the datetime given in parareters
+// Set the start time to the one in param, and stop time will be changed accordingly
+// to keep the same duration
+func MoveActivityFromID(EventID string, startTime time.Time, srv *calendar.Service) (err error) {
+	request := srv.Events.Get("primary", EventID)
+	event, err := request.Do()
+
+	// Getting the duration of the activity
+	oldEndTime, _ := time.Parse(time.RFC3339, event.End.DateTime)
+	oldStartTime, _ := time.Parse(time.RFC3339, event.Start.DateTime)
+	duration := oldEndTime.Sub(oldStartTime)
+
+	event.Start.DateTime = startTime.Format(time.RFC3339)
+	event.End.DateTime = startTime.Add(duration).Format(time.RFC3339)
+
+	call := srv.Events.Update("primary", EventID, event)
+	event, err = call.Do()
+	// Todo check if it becomes the current event or not ?
+	return err
+}
+
 // RenameActivity : Renames the activity given in parameters with the text parameter
 // Also give a pointer the the calendar service in order to send the api.
 func RenameActivity(activity *calendar.Event, text string, srv *calendar.Service) (err error) {
-	var edtEnd calendar.EventDateTime
-	edtEnd.DateTime = time.Now().Format(time.RFC3339)
 	activity.Summary = text
 	call := srv.Events.Update("primary", activity.Id, activity)
 	_, err = call.Do()
@@ -196,10 +215,18 @@ func GetLastEvent(srv *calendar.Service) (calendar.Event, error) {
 	return selectedEvent, nil
 }
 
-//GetStartDateForEventID returns the date of a event given its calendarID
-func GetStartDateForEventID(calendarID string, srv *calendar.Service) (time.Time, error) {
-	request := srv.Events.Get("primary", calendarID)
+//GetStartDateForEventID returns the date of a event given its ID
+func GetStartDateForEventID(ID string, srv *calendar.Service) (time.Time, error) {
+	request := srv.Events.Get("primary", ID)
 	event, err := request.Do()
 	date, _ := time.Parse(time.RFC3339, event.Start.DateTime)
+	return date, err
+}
+
+//GetEndDateForEventID returns the end date of a event given its ID
+func GetEndDateForEventID(ID string, srv *calendar.Service) (time.Time, error) {
+	request := srv.Events.Get("primary", ID)
+	event, err := request.Do()
+	date, _ := time.Parse(time.RFC3339, event.End.DateTime)
 	return date, err
 }

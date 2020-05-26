@@ -183,13 +183,13 @@ func planCommand(command Command, srv *calendar.Service) (err error) {
 			date = time.Date(date.Year(), date.Month(), date.Day(), t.Hour(), t.Minute(), t.Second(), 0, time.Local)
 		}
 
-		colors.DisplayOk("Moving element nb " + strconv.Itoa(index) + " : " + planBuffer.Events[index].Name + "to date and time " + date.Format(time.UnixDate))
+		colors.DisplayOk("Moving element nb " + strconv.Itoa(index) + " : " + planBuffer.Events[index].Name + " to date and time " + date.Format(time.UnixDate))
 		isOkay := utilities.AskOkFromUser("Are you okay with that operation ?")
 		if !isOkay {
 			colors.DisplayInfo("Aborting..")
 			return nil
 		}
-		//colors.DisplayError("MOVE NOT IMPLEMENTED YET")
+		err = api.MoveActivityFromID(planBuffer.Events[index].CalendarID, date, srv)
 		return err
 	case "DELETE":
 		colors.DisplayOk("Removing element nb " + strconv.Itoa(index) + " : " + planBuffer.Events[index].Name)
@@ -208,7 +208,7 @@ func planCommand(command Command, srv *calendar.Service) (err error) {
 			colors.DisplayInfo("Aborting..")
 			return nil
 		}
-		colors.DisplayError("MOVE NOT IMPLEMENTED YET")
+		colors.DisplayError("RENAME NOT IMPLEMENTED YET")
 		return err
 	}
 	return err
