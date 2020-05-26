@@ -187,3 +187,11 @@ func GetLastEvent(srv *calendar.Service) (calendar.Event, error) {
 	}
 	return selectedEvent, nil
 }
+
+//GetStartDateForEventID returns the date of a event given its calendarID
+func GetStartDateForEventID(calendarID string, srv *calendar.Service) (time.Time, error) {
+	request := srv.Events.Get("primary", calendarID)
+	event, err := request.Do()
+	date, _ := time.Parse(time.RFC3339, event.Start.DateTime)
+	return date, err
+}
