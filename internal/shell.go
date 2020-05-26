@@ -7,12 +7,12 @@ import (
 	"runtime"
 	"strings"
 
-	"google.golang.org/api/calendar/v3"
-
 	"github.com/lethenju/gogenda/internal/current_activity"
 	"github.com/lethenju/gogenda/internal/gogendalib"
+	"github.com/lethenju/gogenda/internal/utilities"
 	"github.com/lethenju/gogenda/pkg/colors"
 	api "github.com/lethenju/gogenda/pkg/google_agenda_api"
+	"google.golang.org/api/calendar/v3"
 )
 
 //Shell : Gogenda can be called as a shell, to have a shell like environement for long periods of usage
@@ -26,12 +26,7 @@ func Shell(srv *calendar.Service, version string) {
 	lastEvent, err := api.GetLastEvent(srv)
 	if err == nil && lastEvent.Id != "" {
 		fmt.Println("Last event : " + lastEvent.Summary)
-		fmt.Println("Are you still doing that ? (y/n)")
-		userInput := ""
-		for userInput != "y" && userInput != "n" {
-			fmt.Scan(&userInput)
-		}
-		if userInput == "y" {
+		if utilities.AskOkFromUser("Are you still doing that ?") {
 			current_activity.SetCurrentActivity(&lastEvent)
 		}
 	}

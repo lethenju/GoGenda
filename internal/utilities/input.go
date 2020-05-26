@@ -46,3 +46,16 @@ func InputFromUser(name string) (inputUser string) {
 	}
 	return scanner.Text()
 }
+
+// AskOkFromUser is a helper function to ask nicely the user if he/she's okay to perform some action
+func AskOkFromUser(str string) bool {
+
+	var answer string
+	scanner := bufio.NewScanner(os.Stdin)
+	for answer != "y" && answer != "n" {
+		fmt.Print(str + " (y/n) :")
+		scanner.Scan()
+		answer = scanner.Text()
+	}
+	return answer == "y"
+}
