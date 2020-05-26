@@ -81,12 +81,12 @@ func statsCommand(command Command, srv *calendar.Service) (err error) {
 	sort.Slice(items, func(p, q int) bool {
 		return items[p].ColorId < items[q].ColorId
 	})
-
-	lastColorCode := ""
+	// We have to put a default 0 value that is not the zero value of item.ColorId (which is "")
+	lastColorCode := "unset"
 	var total time.Duration
 	for _, item := range items {
 		if lastColorCode != item.ColorId {
-			if lastColorCode != "" {
+			if lastColorCode != "unset" {
 				colors.DisplayOk("      Total : " + total.String())
 			}
 			lastColorCode = item.ColorId
