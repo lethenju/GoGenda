@@ -44,6 +44,30 @@ import (
 )
 
 func planCommand(command Command, srv *calendar.Service) (err error) {
+	// command[1] == action
+	// action could be SHOW, MOVE, DELETE, RENAME
+
+	// Small helper function to check if the string is a possible action
+	containActionFunc := func(str string) bool {
+		actions := [4]string{"SHOW", "MOVE", "DELETE", "RENAME"}
+		for _, a := range actions {
+			if a == str {
+				return true
+			}
+		}
+		return false
+	}
+	// by default, the action is SHOW
+	action := "SHOW"
+
+	if len(command) > 1 {
+		// if there is at least one argument (command[0] is PLAN anyway)
+		if containActionFunc(strings.ToUpper(command[1])) {
+			action = strings.ToUpper(command[1])
+			command = command[1:]
+		}
+	}
+
 	// Get plan of all day
 	begin := time.Now()
 	begin = time.Date(begin.Year(), begin.Month(), begin.Day(), 0, 0, 0, 0, time.Local)
@@ -78,23 +102,35 @@ func planCommand(command Command, srv *calendar.Service) (err error) {
 	} else {
 		colors.DisplayOk("No events found")
 	}
-	for _, event := range events {
-		beginTime, _ := time.Parse(time.RFC3339, event.Start.DateTime)
-		endTime, _ := time.Parse(time.RFC3339, event.End.DateTime)
-		if beginTime.Day() != lastevent.Day() {
-			colors.DisplayInfoHeading(" Events of " + beginTime.Format("01/02"))
+	switch action {
+	case "SHOW":
+		for i, event := range events {
+			beginTime, _ := time.Parse(time.RFC3339, event.Start.DateTime)
+			endTime, _ := time.Parse(time.RFC3339, event.End.DateTime)
+			if beginTime.Day() != lastevent.Day() {
+				colors.DisplayInfoHeading(" Events of " + beginTime.Format("01/02"))
+			}
+			color, _ := api.GetColorNameFromColorID(event.ColorId)
+			category := configuration.GetNameFromColor(color)
+			if category == "default" {
+				category = ""
+			}
+			category += "]"
+			category = fmt.Sprintf("[%-6s", category)
+			colors.DisplayOk("[" + strconv.Itoa(i) + "] [ " + beginTime.Format("15:04") + " -> " + endTime.Format("15:04") + " ] " + category + " : " + event.Summary)
+			lastevent = beginTime
 		}
-		color, _ := api.GetColorNameFromColorID(event.ColorId)
-		category := configuration.GetNameFromColor(color)
-		if category == "default" {
-			category = ""
-		}
-		category += "]"
-		category = fmt.Sprintf("[%-6s", category)
-		colors.DisplayOk(" [ " + beginTime.Format("15:04") + " -> " + endTime.Format("15:04") + " ] " + category + " : " + event.Summary)
-		lastevent = beginTime
+		return err
+	case "MOVE":
+		colors.DisplayError("MOVE NOT IMPLEMENTED YET")
+		return err
+	case "DELETE":
+		colors.DisplayError("DELETE NOT IMPLEMENTED YET")
+		return err
+	case "RENAME":
+		colors.DisplayError("MOVE NOT IMPLEMENTED YET")
+		return err
 	}
-
 	return err
 }
 
