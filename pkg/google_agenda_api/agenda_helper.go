@@ -198,7 +198,7 @@ func GetLastEvent(srv *calendar.Service) (calendar.Event, error) {
 
 	t := time.Now().Format(time.RFC3339)
 	events, err := srv.Events.List("primary").ShowDeleted(false).
-		SingleEvents(true).TimeMin(time.Now().Add(-12 * time.Hour).Format(time.RFC3339)).TimeMax(t).MaxResults(10).OrderBy("startTime").Do()
+		SingleEvents(true).TimeMin(time.Now().Add(-12 * time.Hour).Format(time.RFC3339)).TimeMax(t).MaxResults(128).OrderBy("startTime").Do()
 	if err != nil {
 		//displayError(ctx, "ERROR : "+err.Error())
 		return selectedEvent, err
