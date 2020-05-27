@@ -156,19 +156,19 @@ func planCommand(command Command, srv *calendar.Service) (err error) {
 		var t time.Time
 		// parse date and time
 		if len(command) == 3 || len(command) == 4 {
-			// PLAN ID date
+			// MOVE ID date
 			// We need to change the date but not the time
 			dateParsed, err := utilities.DateParser(command[2])
 			date = time.Date(dateParsed.Year(), dateParsed.Month(), dateParsed.Day(), date.Hour(), date.Minute(), date.Second(), 0, time.Local)
 			if len(command) == 4 {
-				// PLAN ID date time
+				// MOVE ID date time
 				t, err = utilities.TimeParser(command[3])
 			}
 			if err != nil {
-				// PLAN ID time
+				// MOVE ID time
 				t, err = utilities.TimeParser(command[2])
 				if len(command) == 4 {
-					// PLAN ID time date
+					// MOVE ID time date
 					dateParsed, err = utilities.DateParser(command[3])
 					date = time.Date(dateParsed.Year(), dateParsed.Month(), dateParsed.Day(), date.Hour(), date.Minute(), date.Second(), 0, time.Local)
 
@@ -201,15 +201,21 @@ func planCommand(command Command, srv *calendar.Service) (err error) {
 		err = api.DeleteActivityFromID(planBuffer.Events[index].CalendarID, srv)
 		return err
 	case "RENAME":
+
+		// parse name
+		// RENAME ID "name"
+		if len(command) < 3 {
+			return errors.New("Not enough arguments : gogenda PLAN RENAME ID NAME")
+		}
+		name := strings.Join(command[2:], " ")
 		// Todo get the new name
-		colors.DisplayOk("Renaming element nb " + strconv.Itoa(index) + " : " + planBuffer.Events[index].Name)
+		colors.DisplayOk("Renaming element nb " + strconv.Itoa(index) + " : '" + planBuffer.Events[index].Name + "' to name '" + name + "'")
 		isOkay := utilities.AskOkFromUser("Are you okay with that operation ?")
 		if !isOkay {
 			colors.DisplayInfo("Aborting..")
 			return nil
 		}
-		colors.DisplayError("RENAME NOT IMPLEMENTED YET")
-		return err
+		api.RenameActivityByID(planBuffer.Events[index].CalendarID, name, srv)
 	}
 	return err
 }

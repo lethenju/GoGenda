@@ -135,6 +135,18 @@ func RenameActivity(activity *calendar.Event, text string, srv *calendar.Service
 	return err
 }
 
+// RenameActivityByID : Renames the activity given in parameters with the text parameter
+// Also give a pointer the the calendar service in order to send the api.
+func RenameActivityByID(eventID string, text string, srv *calendar.Service) (err error) {
+	request := srv.Events.Get("primary", eventID)
+	event, err := request.Do()
+
+	event.Summary = text
+	call := srv.Events.Update("primary", eventID, event)
+	_, err = call.Do()
+	return err
+}
+
 // GetActivitiesBetweenDates Retrieve a Events* list of events which occurs between the dates given in parameters (in format RFC3339)
 // Also give a pointer the the calendar service in order to send the api.
 func GetActivitiesBetweenDates(beginDate string, endDate string, srv *calendar.Service) (cals *calendar.Events, err error) {
