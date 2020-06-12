@@ -106,6 +106,11 @@ func helpCommand(command Command, isShell bool) {
 		fmt.Println("          - (id) (time) - The date will stay the same")
 		fmt.Println("          - (id) (date) (time) ")
 		fmt.Println("          - (id) (time) (date) ")
+		fmt.Println("  | plan copy - Copy an event given its id (shown by the 'plan show' command)  to the new start date")
+		fmt.Println("          - (id) (date) - The time will stay the same")
+		fmt.Println("          - (id) (time) - The date will stay the same")
+		fmt.Println("          - (id) (date) (time) ")
+		fmt.Println("          - (id) (time) (date) ")
 		fmt.Println("  | plan rename - Deletes an event given its id (shown by the 'plan show' command)")
 		fmt.Println("          - (id)")
 	} else if strings.ToUpper(specificHelp) == "STATS" {
