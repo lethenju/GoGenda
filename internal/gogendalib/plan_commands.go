@@ -50,7 +50,7 @@ func planCommand(command Command, srv *calendar.Service) (err error) {
 
 	// Small helper function to check if the string is a possible action
 	containActionFunc := func(str string) bool {
-		actions := [4]string{"SHOW", "MOVE", "DELETE", "RENAME"}
+		actions := [5]string{"SHOW", "MOVE", "DELETE", "RENAME", "COPY"}
 		for _, a := range actions {
 			if a == str {
 				return true
@@ -190,6 +190,47 @@ func planCommand(command Command, srv *calendar.Service) (err error) {
 			return nil
 		}
 		err = api.MoveActivityFromID(planBuffer.Events[index].CalendarID, date, srv)
+		return err
+	case "COPY":
+		// grab the old date and time
+		date, err := api.GetStartDateForEventID(planBuffer.Events[index].CalendarID, srv)
+		var t time.Time
+		// parse date and time
+		if len(command) == 3 || len(command) == 4 {
+			// MOVE ID date
+			// We need to change the date but not the time
+			dateParsed, err := utilities.DateParser(command[2])
+			date = time.Date(dateParsed.Year(), dateParsed.Month(), dateParsed.Day(), date.Hour(), date.Minute(), date.Second(), 0, time.Local)
+			if len(command) == 4 {
+				// MOVE ID date time
+				t, err = utilities.TimeParser(command[3])
+			}
+			if err != nil {
+				// MOVE ID time
+				t, err = utilities.TimeParser(command[2])
+				if len(command) == 4 {
+					// MOVE ID time date
+					dateParsed, err = utilities.DateParser(command[3])
+					date = time.Date(dateParsed.Year(), dateParsed.Month(), dateParsed.Day(), date.Hour(), date.Minute(), date.Second(), 0, time.Local)
+
+				}
+				if err != nil {
+					// incorrect date or time
+					return err
+				}
+			}
+		}
+		if !t.IsZero() {
+			date = time.Date(date.Year(), date.Month(), date.Day(), t.Hour(), t.Minute(), t.Second(), 0, time.Local)
+		}
+
+		colors.DisplayOk("Copying element nb " + strconv.Itoa(index) + " : " + planBuffer.Events[index].Name + " to date and time " + date.Format(time.UnixDate))
+		isOkay := utilities.AskOkFromUser("Are you okay with that operation ?")
+		if !isOkay {
+			colors.DisplayInfo("Aborting..")
+			return nil
+		}
+		err = api.CopyActivityFromID(planBuffer.Events[index].CalendarID, date, srv)
 		return err
 	case "DELETE":
 		colors.DisplayOk("Removing element nb " + strconv.Itoa(index) + " : " + planBuffer.Events[index].Name)

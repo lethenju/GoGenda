@@ -126,6 +126,27 @@ func MoveActivityFromID(EventID string, startTime time.Time, srv *calendar.Servi
 	return err
 }
 
+// CopyActivityFromID : Copy the activity with the datetime given in parareters
+// Set the start time to the one in param, and stop time will be changed accordingly
+// to keep the same duration
+func CopyActivityFromID(EventID string, startTime time.Time, srv *calendar.Service) (err error) {
+	request := srv.Events.Get("primary", EventID)
+	event, err := request.Do()
+
+	// Getting the duration of the activity
+	oldEndTime, _ := time.Parse(time.RFC3339, event.End.DateTime)
+	oldStartTime, _ := time.Parse(time.RFC3339, event.Start.DateTime)
+	duration := oldEndTime.Sub(oldStartTime)
+
+	event.Start.DateTime = startTime.Format(time.RFC3339)
+	event.End.DateTime = startTime.Add(duration).Format(time.RFC3339)
+
+	call := srv.Events.Insert("primary", event)
+	event, err = call.Do()
+	// Todo check if it becomes the current event or not ?
+	return err
+}
+
 // RenameActivity : Renames the activity given in parameters with the text parameter
 // Also give a pointer the the calendar service in order to send the api.
 func RenameActivity(activity *calendar.Event, text string, srv *calendar.Service) (err error) {
@@ -233,6 +254,14 @@ func GetStartDateForEventID(ID string, srv *calendar.Service) (time.Time, error)
 	event, err := request.Do()
 	date, _ := time.Parse(time.RFC3339, event.Start.DateTime)
 	return date, err
+}
+
+//GetColorNameForEventID returns the color name of a event given its ID
+func GetColorNameForEventID(ID string, srv *calendar.Service) (string, error) {
+	request := srv.Events.Get("primary", ID)
+	event, err := request.Do()
+	name, err := GetColorNameFromColorID(event.ColorId)
+	return name, err
 }
 
 //GetEndDateForEventID returns the end date of a event given its ID

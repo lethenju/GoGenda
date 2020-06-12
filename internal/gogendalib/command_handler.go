@@ -38,6 +38,7 @@ import (
 
 // CommandHandler takes the command in parameter and dispatchs it to the different command methods in command.go
 func CommandHandler(command []string, srv *calendar.Service, isShell bool) (err error) {
+
 	// Our command name is in the first argument
 	switch strings.ToUpper(command[0]) {
 	// Start an event
