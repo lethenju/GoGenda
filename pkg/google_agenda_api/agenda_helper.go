@@ -216,6 +216,8 @@ func GetColorNameFromColorID(colorID string) (colorName string, err error) {
 		return "purple", nil
 	case "6":
 		return "orange", nil
+	case "10":
+		return "green", nil
 	case "7":
 		return "blue", nil
 	}
