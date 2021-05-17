@@ -90,6 +90,12 @@ func CommandHandler(command []string, srv *calendar.Service, isShell bool) (err 
 			return err
 		}
 		break
+	case "GRAPH":
+		// graph command
+		err = GraphCommand(command, srv)
+		if err != nil {
+			return err
+		}
 	case "HELP":
 		// Show help
 		helpCommand(command, isShell)
