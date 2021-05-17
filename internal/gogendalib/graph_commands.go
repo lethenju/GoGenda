@@ -27,6 +27,9 @@ func RenderGraphCompleteness(items []*calendar.Event) *charts.Bar {
 		startTime, _ := time.Parse(time.RFC3339, item.Start.DateTime)
 		endTime, _ := time.Parse(time.RFC3339, item.End.DateTime)
 		duration := endTime.Sub(startTime)
+		if duration > time.Hour*24 {
+			duration = 0
+		}
 
 		durationTotal[startTime.Weekday()] += duration.Hours() / float64(len(items))
 	}
@@ -52,6 +55,67 @@ func RenderGraphCompleteness(items []*calendar.Event) *charts.Bar {
 	return bar
 }
 
+func RenderGraphCompletenessVsLastWeeks(items []*calendar.Event) *charts.Bar {
+
+	var durationTotal []float64
+	var durationTotal2 []float64 // last week
+	var durationTotal3 []float64 // the week before
+	for i := 0; i < 8; i++ {
+		durationTotal = append(durationTotal, 0)
+		durationTotal2 = append(durationTotal2, 0)
+		durationTotal3 = append(durationTotal3, 0)
+	}
+	nowYear, nowWeek := time.Now().ISOWeek()
+	for _, item := range items {
+		startTime, _ := time.Parse(time.RFC3339, item.Start.DateTime)
+		endTime, _ := time.Parse(time.RFC3339, item.End.DateTime)
+		duration := endTime.Sub(startTime)
+		if duration > time.Hour*24 {
+			duration = 0
+		}
+
+		itemYear, itemWeek := startTime.ISOWeek()
+
+		if nowYear == itemYear && nowWeek == itemWeek {
+			durationTotal[startTime.Weekday()] += duration.Hours()
+		} else if nowYear == itemYear && nowWeek == itemWeek+1 {
+			// Last week (TODO not working for last / first week of the year)
+			durationTotal2[startTime.Weekday()] += duration.Hours()
+		} else if nowYear == itemYear && nowWeek == itemWeek+2 {
+			// the week before
+			durationTotal3[startTime.Weekday()] += duration.Hours()
+		}
+	}
+
+	// create a new bar instance
+	bar := charts.NewBar()
+	// set some global options like Title/Legend/ToolTip or anything else
+	bar.SetGlobalOptions(charts.WithTitleOpts(opts.Title{
+		Title: "Completeness since " + items[0].Start.Date,
+	}), charts.WithToolboxOpts(opts.Toolbox{Show: true}),
+		charts.WithLegendOpts(opts.Legend{Right: "80%"}))
+
+	itemsTotal := make([]opts.BarData, 0)
+	itemsTotal2 := make([]opts.BarData, 0)
+	itemsTotal3 := make([]opts.BarData, 0)
+	for i := 1; i < 7; i++ {
+		itemsTotal = append(itemsTotal, opts.BarData{Value: durationTotal[i]})
+		itemsTotal2 = append(itemsTotal2, opts.BarData{Value: durationTotal2[i]})
+		itemsTotal3 = append(itemsTotal3, opts.BarData{Value: durationTotal3[i]})
+	}
+	// Sunday at last
+	itemsTotal = append(itemsTotal, opts.BarData{Value: durationTotal[0]})
+	itemsTotal2 = append(itemsTotal2, opts.BarData{Value: durationTotal3[0]})
+	itemsTotal3 = append(itemsTotal3, opts.BarData{Value: durationTotal2[0]})
+
+	// Put data into instance
+	bar.SetXAxis([]string{"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"}).
+		AddSeries("TotalLastWeek2", itemsTotal3).
+		AddSeries("TotalLastWeek", itemsTotal2).
+		AddSeries("Total", itemsTotal)
+	return bar
+}
+
 func RenderGraphWorkVsLastWeek(items []*calendar.Event) *charts.Bar {
 
 	// We have to put a default 0 value that is not the zero value of item.ColorId (which is ""
@@ -71,7 +135,9 @@ func RenderGraphWorkVsLastWeek(items []*calendar.Event) *charts.Bar {
 		startTime, _ := time.Parse(time.RFC3339, item.Start.DateTime)
 		endTime, _ := time.Parse(time.RFC3339, item.End.DateTime)
 		duration := endTime.Sub(startTime)
-
+		if duration > time.Hour*24 {
+			duration = 0
+		}
 		// retrieve category
 		colorName, _ := api.GetColorNameFromColorID(item.ColorId)
 		category := configuration.GetNameFromColor(colorName)
@@ -133,7 +199,9 @@ func RenderGraphWorkVsPlay(items []*calendar.Event) *charts.Bar {
 		startTime, _ := time.Parse(time.RFC3339, item.Start.DateTime)
 		endTime, _ := time.Parse(time.RFC3339, item.End.DateTime)
 		duration := endTime.Sub(startTime)
-
+		if duration > time.Hour*24 {
+			duration = 0
+		}
 		// retrieve category
 		colorName, _ := api.GetColorNameFromColorID(item.ColorId)
 		category := configuration.GetNameFromColor(colorName)
@@ -194,7 +262,9 @@ func RenderGraphWork(items []*calendar.Event) *charts.Line {
 		startTime, _ := time.Parse(time.RFC3339, items[i].Start.DateTime)
 		endTime, _ := time.Parse(time.RFC3339, items[i].End.DateTime)
 		duration := endTime.Sub(startTime)
-
+		if duration > time.Hour*24 {
+			duration = 0
+		}
 		// Same date
 		_, week := startTime.ISOWeek()
 		_, weekAct := actualDate.ISOWeek()
@@ -325,6 +395,7 @@ func GraphCommand(command Command, srv *calendar.Service) (err error) {
 		RenderGraphWorkVsPlay(items),
 		RenderGraphWorkVsLastWeek(items),
 		RenderGraphCompleteness(items),
+		RenderGraphCompletenessVsLastWeeks(items),
 		RenderGraphWork(items),
 	)
 	// Where the magic happens
