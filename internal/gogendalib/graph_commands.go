@@ -17,6 +17,109 @@ import (
 	"google.golang.org/api/calendar/v3"
 )
 
+func RenderGraphCompleteness(items []*calendar.Event) *charts.Bar {
+
+	var durationTotal []float64
+	for i := 0; i < 8; i++ {
+		durationTotal = append(durationTotal, 0)
+	}
+	for _, item := range items {
+		startTime, _ := time.Parse(time.RFC3339, item.Start.DateTime)
+		endTime, _ := time.Parse(time.RFC3339, item.End.DateTime)
+		duration := endTime.Sub(startTime)
+
+		durationTotal[startTime.Weekday()] += duration.Hours() / float64(len(items))
+	}
+
+	// create a new bar instance
+	bar := charts.NewBar()
+	// set some global options like Title/Legend/ToolTip or anything else
+	bar.SetGlobalOptions(charts.WithTitleOpts(opts.Title{
+		Title: "Completeness since " + items[0].Start.Date,
+	}), charts.WithToolboxOpts(opts.Toolbox{Show: true}),
+		charts.WithLegendOpts(opts.Legend{Right: "80%"}))
+
+	itemsTotal := make([]opts.BarData, 0)
+	for i := 1; i < 7; i++ {
+		itemsTotal = append(itemsTotal, opts.BarData{Value: durationTotal[i]})
+	}
+	// Sunday at last
+	itemsTotal = append(itemsTotal, opts.BarData{Value: durationTotal[0]})
+
+	// Put data into instance
+	bar.SetXAxis([]string{"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"}).
+		AddSeries("Total", itemsTotal)
+	return bar
+}
+
+func RenderGraphWorkVsLastWeek(items []*calendar.Event) *charts.Bar {
+
+	// We have to put a default 0 value that is not the zero value of item.ColorId (which is ""
+	var durationWork []float64
+	// last week
+	var durationWorkLastWeek []float64
+	// The week before
+	var durationWorkLastWeek2 []float64
+	for i := 0; i < 8; i++ {
+		durationWork = append(durationWork, 0)
+		durationWorkLastWeek = append(durationWorkLastWeek, 0)
+		durationWorkLastWeek2 = append(durationWorkLastWeek2, 0)
+	}
+	nowYear, nowWeek := time.Now().ISOWeek()
+
+	for _, item := range items {
+		startTime, _ := time.Parse(time.RFC3339, item.Start.DateTime)
+		endTime, _ := time.Parse(time.RFC3339, item.End.DateTime)
+		duration := endTime.Sub(startTime)
+
+		// retrieve category
+		colorName, _ := api.GetColorNameFromColorID(item.ColorId)
+		category := configuration.GetNameFromColor(colorName)
+		itemYear, itemWeek := startTime.ISOWeek()
+
+		if category == "WORK" {
+			if nowYear == itemYear && nowWeek == itemWeek {
+				durationWork[startTime.Weekday()] += duration.Hours()
+			} else if nowYear == itemYear && nowWeek == itemWeek+1 {
+				// Last week (TODO not working for last / first week of the year)
+				durationWorkLastWeek[startTime.Weekday()] += duration.Hours()
+			} else if nowYear == itemYear && nowWeek == itemWeek+2 {
+				// the week before
+				durationWorkLastWeek2[startTime.Weekday()] += duration.Hours()
+			}
+		}
+	}
+
+	// create a new bar instance
+	bar := charts.NewBar()
+	// set some global options like Title/Legend/ToolTip or anything else
+	bar.SetGlobalOptions(charts.WithTitleOpts(opts.Title{
+		Title: "Worktime this week vs last weeks",
+	}), charts.WithToolboxOpts(opts.Toolbox{Show: true}),
+		charts.WithLegendOpts(opts.Legend{Right: "80%"}))
+
+	itemsWork := make([]opts.BarData, 0)
+	itemsWorkLastWeek := make([]opts.BarData, 0)
+	itemsWorkLastWeek2 := make([]opts.BarData, 0)
+	for i := 1; i < 7; i++ {
+		itemsWork = append(itemsWork, opts.BarData{Value: durationWork[i]})
+		itemsWorkLastWeek = append(itemsWorkLastWeek, opts.BarData{Value: durationWorkLastWeek[i]})
+		itemsWorkLastWeek2 = append(itemsWorkLastWeek2, opts.BarData{Value: durationWorkLastWeek2[i]})
+	}
+	// Sunday at last
+	itemsWork = append(itemsWork, opts.BarData{Value: durationWork[0]})
+	itemsWorkLastWeek = append(itemsWorkLastWeek, opts.BarData{Value: durationWorkLastWeek[0]})
+	itemsWorkLastWeek2 = append(itemsWorkLastWeek2, opts.BarData{Value: durationWorkLastWeek2[0]})
+
+	// Put data into instance
+	bar.SetXAxis([]string{"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"}).
+		AddSeries("Work the week before", itemsWorkLastWeek2).
+		AddSeries("Work last week", itemsWorkLastWeek).
+		AddSeries("Work", itemsWork)
+	//AddSeries("Projets", itemsProjects).
+	return bar
+}
+
 func RenderGraphWorkVsPlay(items []*calendar.Event) *charts.Bar {
 
 	// We have to put a default 0 value that is not the zero value of item.ColorId (which is ""
@@ -93,25 +196,28 @@ func RenderGraphWork(items []*calendar.Event) *charts.Line {
 		duration := endTime.Sub(startTime)
 
 		// Same date
-		if startTime.Year() == actualDate.Year() &&
-			startTime.Month() == actualDate.Month() &&
-			int(startTime.Day()/7) == int(actualDate.Day()/7) {
+		_, week := startTime.ISOWeek()
+		_, weekAct := actualDate.ISOWeek()
+		if week == weekAct {
 			totalDuration += duration
 
 			// retrieve category
 			colorName, _ := api.GetColorNameFromColorID(items[i].ColorId)
 			category := configuration.GetNameFromColor(colorName)
 
-			if category == "WORK" {
+			if category == "WORK" || category == "PROJECT" {
 				totalDurationWork += duration
 			} else if category == "FUN" {
 				totalDurationFun += duration
 			}
 		} else {
-			x = append(x, startTime.Format(time.RFC3339))
-			//y = append(y, opts.LineData{Value: totalDuration.Hours()})
-			y2 = append(y2, opts.LineData{Value: totalDurationWork.Hours()})
-			y3 = append(y3, opts.LineData{Value: totalDurationFun.Hours()})
+			if totalDuration != 0 {
+				x = append(x, startTime.Format(time.RFC1123))
+				//y = append(y, opts.LineData{Value: totalDuration.Hours()})
+				y2 = append(y2, opts.LineData{Value: (totalDurationWork.Hours() / totalDuration.Hours())})
+				y3 = append(y3, opts.LineData{Value: (totalDurationFun.Hours() / totalDuration.Hours())})
+			}
+
 			totalDuration = time.Duration(0)
 			totalDurationWork = time.Duration(0)
 			totalDurationFun = time.Duration(0)
@@ -144,7 +250,11 @@ func RenderGraphWork(items []*calendar.Event) *charts.Line {
 		}),
 	)
 
-	line.SetXAxis(x).AddSeries("LineFun", y3).AddSeries("LineWork", y2)
+	line.SetXAxis(x).AddSeries("LineFun", y3).AddSeries("LineWork", y2).SetSeriesOptions(charts.WithLineChartOpts(
+		opts.LineChart{
+			Smooth: true,
+		}),
+	)
 
 	return line
 }
@@ -210,8 +320,11 @@ func GraphCommand(command Command, srv *calendar.Service) (err error) {
 	}
 
 	page := components.NewPage()
+	page.Layout = components.PageFlexLayout
 	page.AddCharts(
 		RenderGraphWorkVsPlay(items),
+		RenderGraphWorkVsLastWeek(items),
+		RenderGraphCompleteness(items),
 		RenderGraphWork(items),
 	)
 	// Where the magic happens
