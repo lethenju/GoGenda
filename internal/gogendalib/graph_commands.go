@@ -2,20 +2,152 @@ package gogendalib
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"strconv"
 	"time"
 
+	"github.com/go-echarts/go-echarts/v2/charts"
+	"github.com/go-echarts/go-echarts/v2/components"
+	"github.com/go-echarts/go-echarts/v2/opts"
 	cmdOptions "github.com/lethenju/gogenda/internal/cmd_options"
 	"github.com/lethenju/gogenda/internal/configuration"
 	"github.com/lethenju/gogenda/internal/utilities"
 	"github.com/lethenju/gogenda/pkg/colors"
 	api "github.com/lethenju/gogenda/pkg/google_agenda_api"
-	chart "github.com/wcharczuk/go-chart" //exposes "chart"
 	"google.golang.org/api/calendar/v3"
 )
 
+func RenderGraphWorkVsPlay(items []*calendar.Event) *charts.Bar {
+
+	// We have to put a default 0 value that is not the zero value of item.ColorId (which is ""
+	var durationWork []float64
+	var durationFun []float64
+	for i := 0; i < 8; i++ {
+		durationWork = append(durationWork, 0)
+		durationFun = append(durationFun, 0)
+	}
+	for _, item := range items {
+		startTime, _ := time.Parse(time.RFC3339, item.Start.DateTime)
+		endTime, _ := time.Parse(time.RFC3339, item.End.DateTime)
+		duration := endTime.Sub(startTime)
+
+		// retrieve category
+		colorName, _ := api.GetColorNameFromColorID(item.ColorId)
+		category := configuration.GetNameFromColor(colorName)
+
+		if category == "WORK" {
+			durationWork[startTime.Weekday()] += duration.Hours()
+		} else if category == "FUN" {
+			durationFun[startTime.Weekday()] += duration.Hours()
+		} else if category == "PROJECT" {
+			durationWork[startTime.Weekday()] += duration.Hours()
+		}
+
+		if !cmdOptions.IsOptionSet("compact") {
+			//colors.DisplayOk(" [ " + startTime.Format(time.RFC3339) + " -> " + endTime.Format("15:04") + " ] " + duration.String() + " : " + item.Summary)
+		}
+	}
+
+	// create a new bar instance
+	bar := charts.NewBar()
+	// set some global options like Title/Legend/ToolTip or anything else
+	bar.SetGlobalOptions(charts.WithTitleOpts(opts.Title{
+		Title:    "Worktime vs Playtime since " + items[0].Start.Date,
+		Subtitle: "In blue worktime, in green playtime",
+	}), charts.WithToolboxOpts(opts.Toolbox{Show: true}),
+		charts.WithLegendOpts(opts.Legend{Right: "80%"}))
+
+	itemsWork := make([]opts.BarData, 0)
+	itemsFun := make([]opts.BarData, 0)
+	for i := 1; i < 7; i++ {
+		itemsWork = append(itemsWork, opts.BarData{Value: durationWork[i]})
+		itemsFun = append(itemsFun, opts.BarData{Value: durationFun[i]})
+	}
+	// Sunday at last
+	itemsWork = append(itemsWork, opts.BarData{Value: durationWork[0]})
+	itemsFun = append(itemsFun, opts.BarData{Value: durationFun[0]})
+
+	// Put data into instance
+	bar.SetXAxis([]string{"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"}).
+		AddSeries("Work", itemsWork).
+		//AddSeries("Projets", itemsProjects).
+		AddSeries("Fun", itemsFun)
+	return bar
+}
+
+func RenderGraphWork(items []*calendar.Event) *charts.Line {
+	line := charts.NewLine()
+
+	x := make([]string, 0)
+	//y := make([]opts.LineData, 0)
+	y2 := make([]opts.LineData, 0)
+	y3 := make([]opts.LineData, 0)
+	actualDate, _ := time.Parse(time.RFC3339, items[0].Start.DateTime)
+	totalDuration := time.Duration(0)
+	totalDurationWork := time.Duration(0)
+	totalDurationFun := time.Duration(0)
+
+	for i := 0; i < len(items); i++ {
+		startTime, _ := time.Parse(time.RFC3339, items[i].Start.DateTime)
+		endTime, _ := time.Parse(time.RFC3339, items[i].End.DateTime)
+		duration := endTime.Sub(startTime)
+
+		// Same date
+		if startTime.Year() == actualDate.Year() &&
+			startTime.Month() == actualDate.Month() &&
+			int(startTime.Day()/7) == int(actualDate.Day()/7) {
+			totalDuration += duration
+
+			// retrieve category
+			colorName, _ := api.GetColorNameFromColorID(items[i].ColorId)
+			category := configuration.GetNameFromColor(colorName)
+
+			if category == "WORK" {
+				totalDurationWork += duration
+			} else if category == "FUN" {
+				totalDurationFun += duration
+			}
+		} else {
+			x = append(x, startTime.Format(time.RFC3339))
+			//y = append(y, opts.LineData{Value: totalDuration.Hours()})
+			y2 = append(y2, opts.LineData{Value: totalDurationWork.Hours()})
+			y3 = append(y3, opts.LineData{Value: totalDurationFun.Hours()})
+			totalDuration = time.Duration(0)
+			totalDurationWork = time.Duration(0)
+			totalDurationFun = time.Duration(0)
+			// different date, add data
+			actualDate = startTime
+		}
+	}
+
+	line.SetGlobalOptions(
+		charts.WithTitleOpts(opts.Title{
+			Title: "Event type evolution",
+		}),
+		charts.WithXAxisOpts(opts.XAxis{
+			SplitNumber: 20,
+		}),
+		charts.WithYAxisOpts(opts.YAxis{
+			Scale: true,
+		}),
+		charts.WithDataZoomOpts(opts.DataZoom{
+			Type:       "inside",
+			Start:      50,
+			End:        100,
+			XAxisIndex: []int{0},
+		}),
+		charts.WithDataZoomOpts(opts.DataZoom{
+			Type:       "slider",
+			Start:      50,
+			End:        100,
+			XAxisIndex: []int{0},
+		}),
+	)
+
+	line.SetXAxis(x).AddSeries("LineFun", y3).AddSeries("LineWork", y2)
+
+	return line
+}
 func GraphCommand(command Command, srv *calendar.Service) (err error) {
 	// Get plan of all day
 	begin := time.Now()
@@ -38,72 +170,52 @@ func GraphCommand(command Command, srv *calendar.Service) (err error) {
 	}
 	end := begin.Add(time.Duration(24*nbDays) * time.Hour)
 
-	events, err := api.GetActivitiesBetweenDates(
-		begin.Format(time.RFC3339),
-		end.Format(time.RFC3339), srv)
-	if err != nil {
-		return err
-	}
-	items := events.Items
+	// If there are too much time between dates, need to ask several times : ask for every 30 days
+	nbAsks := (int(end.Sub(begin).Hours()/24) / 30) + 1
+	colors.DisplayInfo("NbAsks " + strconv.Itoa(nbAsks))
+	var items []*calendar.Event
 
-	if err != nil {
-		return err
-	}
+	if nbAsks == 1 {
+		events, err := api.GetActivitiesBetweenDates(
+			begin.Format(time.RFC3339),
+			end.Format(time.RFC3339), srv)
+		if err != nil {
+			return err
+		}
 
-	// We have to put a default 0 value that is not the zero value of item.ColorId (which is ""
-	var total time.Duration
-	var datesEvent []time.Time
-	var durationWork []float64
-	startDay1, _ := time.Parse(time.RFC3339, items[0].Start.DateTime)
-	actualDay := startDay1.Day()
-	for _, item := range items {
-		startTime, _ := time.Parse(time.RFC3339, item.Start.DateTime)
-		endTime, _ := time.Parse(time.RFC3339, item.End.DateTime)
-		duration := endTime.Sub(startTime)
-		if actualDay == startTime.Day() {
+		items = append(items, events.Items...)
+	} else {
 
-			// retrieve category
-			colorName, _ := api.GetColorNameFromColorID(item.ColorId)
-			category := configuration.GetNameFromColor(colorName)
+		for i := 1; i < nbAsks; i++ {
+			colors.DisplayInfo("Asking for 30 days (i=" + strconv.Itoa(i) + ") - [" + begin.Add(time.Hour*time.Duration(24*30*(i-1))).Format(time.RFC3339) + "] -> [" + begin.Add(time.Hour*time.Duration(24*30*i)).Format(time.RFC3339) + "]")
 
-			if category == "WORK" {
-				total += duration
+			//Asking for 30 days
+			events, err := api.GetActivitiesBetweenDates(
+				begin.Add(time.Hour*time.Duration(24*30*(i-1))).Format(time.RFC3339),
+				begin.Add(time.Hour*time.Duration(24*30*i)).Format(time.RFC3339), srv)
+			if err != nil {
+				return err
 			}
-
-		} else {
-			colors.DisplayOk("CHANGEMENT DE JOUR")
-			colors.DisplayOk("      Total : " + total.String())
-
-			// changement de jour
-			actualDay = startTime.Day()
-			// Ajout du temps de travail de la journée dans le graph
-			datesEvent = append(datesEvent, startTime)
-			durationWork = append(durationWork, total.Minutes())
-			total = 0
+			items = append(items, events.Items...)
 		}
-		if !cmdOptions.IsOptionSet("compact") {
-			//colors.DisplayOk(" [ " + startTime.Format("15:04") + " -> " + endTime.Format("15:04") + " ] " + duration.String() + " : " + item.Summary)
+		// Asking for the remaining days
+		colors.DisplayInfo("Asking for the remaining days - [" + begin.Add(time.Hour*time.Duration(24*120*(nbAsks-1))).Format(time.RFC3339) + "] -> [" + end.Format(time.RFC3339) + "]")
+		events, err := api.GetActivitiesBetweenDates(
+			begin.Add(time.Hour*time.Duration(24*120*(nbAsks-1))).Format(time.RFC3339),
+			end.Format(time.RFC3339), srv)
+		if err != nil {
+			return err
 		}
+		items = append(items, events.Items...)
 	}
 
-	for i := 0; i < len(datesEvent); i++ {
-		datesEvent[i] = time.Date(datesEvent[i].Year(), datesEvent[i].Month(), datesEvent[i].Day(), 0, 0, 0, 0, time.Local)
-		s := fmt.Sprintf("%f", durationWork[i])
-
-		colors.DisplayInfo(datesEvent[i].String() + "   ->  " + s)
-	}
-
-	graph := chart.Chart{
-		Series: []chart.Series{
-			chart.TimeSeries{
-				XValues: datesEvent,
-				YValues: durationWork,
-			},
-		},
-	}
-
-	f, _ := os.Create("output.png")
-	defer f.Close()
-	graph.Render(chart.PNG, f)
+	page := components.NewPage()
+	page.AddCharts(
+		RenderGraphWorkVsPlay(items),
+		RenderGraphWork(items),
+	)
+	// Where the magic happens
+	f, _ := os.Create("page.html")
+	page.Render(f)
 	return nil
 }
