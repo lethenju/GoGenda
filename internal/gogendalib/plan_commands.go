@@ -137,11 +137,11 @@ func planCommand(command Command, srv *calendar.Service) (err error) {
 	planBuffer, err := utilities.LoadPlan()
 
 	if err != nil {
-		return errors.New("Please call 'PLAN SHOW' first before modifying an event we dont know about")
+		return errors.New("please call 'plan show' first before modifying an event we dont know about")
 	}
 	// Now we need to get the id
 	if len(command) == 1 {
-		return errors.New("Please give an id of an event to modify")
+		return errors.New("please give an id of an event to modify")
 	}
 	index, err := strconv.Atoi(command[1])
 	if err != nil {
@@ -153,6 +153,9 @@ func planCommand(command Command, srv *calendar.Service) (err error) {
 	case "MOVE":
 		// grab the old date and time
 		date, err := api.GetStartDateForEventID(planBuffer.Events[index].CalendarID, srv)
+		if err != nil {
+			return err
+		}
 		var t time.Time
 		// parse date and time
 		if len(command) == 3 || len(command) == 4 {
@@ -194,6 +197,9 @@ func planCommand(command Command, srv *calendar.Service) (err error) {
 	case "COPY":
 		// grab the old date and time
 		date, err := api.GetStartDateForEventID(planBuffer.Events[index].CalendarID, srv)
+		if err != nil {
+			return err
+		}
 		var t time.Time
 		// parse date and time
 		if len(command) == 3 || len(command) == 4 {
@@ -246,7 +252,7 @@ func planCommand(command Command, srv *calendar.Service) (err error) {
 		// parse name
 		// RENAME ID "name"
 		if len(command) < 3 {
-			return errors.New("Not enough arguments : gogenda PLAN RENAME ID NAME")
+			return errors.New("not enough arguments : gogenda plan rename id name")
 		}
 		name := strings.Join(command[2:], " ")
 		// Todo get the new name

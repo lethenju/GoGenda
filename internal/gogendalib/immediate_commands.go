@@ -88,7 +88,7 @@ func stopCommand(srv *calendar.Service) (err error) {
 
 	currentActivity, err := current_activity.GetCurrentActivity()
 	if err != nil {
-		return errors.New("Nothing to stop")
+		return errors.New("nothing to stop")
 	}
 
 	duration, err := api.GetDuration(currentActivity)
@@ -104,14 +104,14 @@ func stopCommand(srv *calendar.Service) (err error) {
 	current_activity.SetCurrentActivity(nil)
 
 	colors.DisplayOk("Successfully stopped the activity ! I hope it went well ")
-	return nil
+	return err
 }
 
 func deleteCommand(srv *calendar.Service) (err error) {
 
 	currentActivity, err := current_activity.GetCurrentActivity()
 	if err != nil {
-		return errors.New("Nothing to delete")
+		return errors.New("nothing to delete")
 	}
 	err = api.DeleteActivity(currentActivity, srv)
 	if err != nil {
@@ -124,7 +124,7 @@ func deleteCommand(srv *calendar.Service) (err error) {
 func renameCommand(command Command, srv *calendar.Service) (err error) {
 	currentActivity, err := current_activity.GetCurrentActivity()
 	if err != nil {
-		return errors.New("Nothing to rename")
+		return errors.New("nothing to rename")
 	}
 	var nameOfEvent string
 	if len(command) == 1 {
@@ -137,5 +137,5 @@ func renameCommand(command Command, srv *calendar.Service) (err error) {
 		return err
 	}
 	colors.DisplayOk("Successfully renamed the activity")
-	return nil
+	return err
 }

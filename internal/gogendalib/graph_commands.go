@@ -3,13 +3,14 @@ package gogendalib
 import (
 	"errors"
 	"os"
+	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-echarts/go-echarts/v2/charts"
 	"github.com/go-echarts/go-echarts/v2/components"
 	"github.com/go-echarts/go-echarts/v2/opts"
-	cmdOptions "github.com/lethenju/gogenda/internal/cmd_options"
 	"github.com/lethenju/gogenda/internal/configuration"
 	"github.com/lethenju/gogenda/internal/utilities"
 	"github.com/lethenju/gogenda/pkg/colors"
@@ -143,7 +144,7 @@ func RenderGraphWorkVsLastWeek(items []*calendar.Event) *charts.Bar {
 		category := configuration.GetNameFromColor(colorName)
 		itemYear, itemWeek := startTime.ISOWeek()
 
-		if category == "WORK" {
+		if category == "WORK" || category == "PROJECT" {
 			if nowYear == itemYear && nowWeek == itemWeek {
 				durationWork[startTime.Weekday()] += duration.Hours()
 			} else if nowYear == itemYear && nowWeek == itemWeek+1 {
@@ -214,9 +215,6 @@ func RenderGraphWorkVsPlay(items []*calendar.Event) *charts.Bar {
 			durationWork[startTime.Weekday()] += duration.Hours()
 		}
 
-		if !cmdOptions.IsOptionSet("compact") {
-			//colors.DisplayOk(" [ " + startTime.Format(time.RFC3339) + " -> " + endTime.Format("15:04") + " ] " + duration.String() + " : " + item.Summary)
-		}
 	}
 
 	// create a new bar instance
@@ -328,6 +326,171 @@ func RenderGraphWork(items []*calendar.Event) *charts.Line {
 
 	return line
 }
+
+type ActivityType struct {
+	name      string
+	nb        int
+	timeSpent float64
+}
+
+func getMostRecurrentEventsByCategory(items []*calendar.Event, category string) []ActivityType {
+
+	// We have to put a default 0 value that is not the zero value of item.ColorId (which is ""
+	var events []ActivityType
+
+	for _, item := range items {
+		startTime, _ := time.Parse(time.RFC3339, item.Start.DateTime)
+		endTime, _ := time.Parse(time.RFC3339, item.End.DateTime)
+		duration := endTime.Sub(startTime)
+		// retrieve category
+		colorName, _ := api.GetColorNameFromColorID(item.ColorId)
+		itemCategory := configuration.GetNameFromColor(colorName)
+
+		if itemCategory == category {
+			found := false
+			for i := 0; i < len(events); i++ {
+				s := strings.Split(item.Summary, " ")
+				for _, word := range s {
+					if events[i].name == word {
+						events[i].nb++
+						events[i].timeSpent += duration.Hours()
+						found = true
+					}
+
+				}
+			}
+
+			if !found {
+				events = append(events, ActivityType{name: item.Summary, nb: 0})
+			}
+		}
+
+	}
+	// sort by nb occurence
+	sort.Slice(events, func(p, q int) bool {
+		return events[p].nb > events[q].nb
+	})
+
+	return events
+}
+
+func RenderGraphMostRecurrentMeals(items []*calendar.Event) *charts.Bar {
+
+	meals := getMostRecurrentEventsByCategory(items, "LUNCH")
+
+	// create a new bar instance
+	bar := charts.NewBar()
+	// set some global options like Title/Legend/ToolTip or anything else
+	bar.SetGlobalOptions(charts.WithTitleOpts(opts.Title{
+		Title: "Most common meals since " + items[0].Start.Date,
+	}), charts.WithToolboxOpts(opts.Toolbox{Show: true}),
+		charts.WithLegendOpts(opts.Legend{Right: "80%"}),
+		charts.WithDataZoomOpts(opts.DataZoom{
+			Type:       "inside",
+			Start:      50,
+			End:        100,
+			XAxisIndex: []int{0},
+		}),
+		charts.WithDataZoomOpts(opts.DataZoom{
+			Type:       "slider",
+			Start:      50,
+			End:        100,
+			XAxisIndex: []int{0},
+		}))
+
+	itemsMeal := make([]opts.BarData, 0)
+	itemsMealLabels := make([]string, 0)
+	for i := 0; i < 30; i++ {
+		itemsMeal = append(itemsMeal, opts.BarData{Value: meals[i].nb})
+		itemsMealLabels = append(itemsMealLabels, meals[i].name)
+	}
+
+	bar.SetXAxis(itemsMealLabels).
+		AddSeries("Meals", itemsMeal)
+	return bar
+}
+
+func RenderGraphMostRecurrentFunActivities(items []*calendar.Event) *charts.Bar {
+
+	activities := getMostRecurrentEventsByCategory(items, "FUN")
+
+	// re-sort by time spent
+	sort.Slice(activities, func(p, q int) bool {
+		return activities[p].timeSpent > activities[q].timeSpent
+	})
+
+	// create a new bar instance
+	bar := charts.NewBar()
+	// set some global options like Title/Legend/ToolTip or anything else
+	bar.SetGlobalOptions(charts.WithTitleOpts(opts.Title{
+		Title: "Most time consuming activities since " + items[0].Start.Date,
+	}), charts.WithToolboxOpts(opts.Toolbox{Show: true}),
+		charts.WithLegendOpts(opts.Legend{Right: "80%"}),
+		charts.WithDataZoomOpts(opts.DataZoom{
+			Type:       "inside",
+			Start:      50,
+			End:        100,
+			XAxisIndex: []int{0},
+		}),
+		charts.WithDataZoomOpts(opts.DataZoom{
+			Type:       "slider",
+			Start:      50,
+			End:        100,
+			XAxisIndex: []int{0},
+		}))
+
+	itemsActivity := make([]opts.BarData, 0)
+	itemsActivityLabels := make([]string, 0)
+	for i := 0; i < 30; i++ {
+		itemsActivity = append(itemsActivity, opts.BarData{Value: activities[i].timeSpent})
+		itemsActivityLabels = append(itemsActivityLabels, activities[i].name)
+	}
+
+	bar.SetXAxis(itemsActivityLabels).
+		AddSeries("Activities", itemsActivity)
+	return bar
+}
+
+func RenderGraphMostRecurrentProjectActivities(items []*calendar.Event) *charts.Bar {
+
+	activities := getMostRecurrentEventsByCategory(items, "PROJECT")
+
+	// re-sort by time spent
+	sort.Slice(activities, func(p, q int) bool {
+		return activities[p].timeSpent > activities[q].timeSpent
+	})
+
+	// create a new bar instance
+	bar := charts.NewBar()
+	// set some global options like Title/Legend/ToolTip or anything else
+	bar.SetGlobalOptions(charts.WithTitleOpts(opts.Title{
+		Title: "Most common project since " + items[0].Start.Date,
+	}), charts.WithToolboxOpts(opts.Toolbox{Show: true}),
+		charts.WithLegendOpts(opts.Legend{Right: "80%"}),
+		charts.WithDataZoomOpts(opts.DataZoom{
+			Type:       "inside",
+			Start:      50,
+			End:        100,
+			XAxisIndex: []int{0},
+		}),
+		charts.WithDataZoomOpts(opts.DataZoom{
+			Type:       "slider",
+			Start:      50,
+			End:        100,
+			XAxisIndex: []int{0},
+		}))
+
+	itemsActivity := make([]opts.BarData, 0)
+	itemsActivityLabels := make([]string, 0)
+	for i := 0; i < 30; i++ {
+		itemsActivity = append(itemsActivity, opts.BarData{Value: activities[i].timeSpent})
+		itemsActivityLabels = append(itemsActivityLabels, activities[i].name)
+	}
+
+	bar.SetXAxis(itemsActivityLabels).
+		AddSeries("Activities", itemsActivity)
+	return bar
+}
 func GraphCommand(command Command, srv *calendar.Service) (err error) {
 	// Get plan of all day
 	begin := time.Now()
@@ -352,7 +515,6 @@ func GraphCommand(command Command, srv *calendar.Service) (err error) {
 
 	// If there are too much time between dates, need to ask several times : ask for every 30 days
 	nbAsks := (int(end.Sub(begin).Hours()/24) / 30) + 1
-	colors.DisplayInfo("NbAsks " + strconv.Itoa(nbAsks))
 	var items []*calendar.Event
 
 	if nbAsks == 1 {
@@ -396,6 +558,10 @@ func GraphCommand(command Command, srv *calendar.Service) (err error) {
 		RenderGraphWorkVsLastWeek(items),
 		RenderGraphCompleteness(items),
 		RenderGraphCompletenessVsLastWeeks(items),
+		RenderGraphMostRecurrentMeals(items),
+		RenderGraphMostRecurrentFunActivities(items),
+		//RenderGraphMostRecurrentWorkActivities(items),
+		RenderGraphMostRecurrentProjectActivities(items),
 		RenderGraphWork(items),
 	)
 	// Where the magic happens

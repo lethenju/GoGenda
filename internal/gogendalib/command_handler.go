@@ -47,49 +47,42 @@ func CommandHandler(command []string, srv *calendar.Service, isShell bool) (err 
 		if err != nil {
 			return err
 		}
-		break
 	case "STOP":
 		// Stop an event
 		err = stopCommand(srv)
 		if err != nil {
 			return err
 		}
-		break
 	case "RENAME":
 		// Renames an event
 		err = renameCommand(command, srv)
 		if err != nil {
 			return err
 		}
-		break
 	case "DELETE":
 		// Deletes an event
 		err = deleteCommand(srv)
 		if err != nil {
 			return err
 		}
-		break
 	case "PLAN":
 		// Show the plan of the date (or today if no date)
 		err = planCommand(command, srv)
 		if err != nil {
 			return err
 		}
-		break
 	case "ADD":
 		// add an event to the calendar at a specific date
 		err = addCommand(command, srv)
 		if err != nil {
 			return err
 		}
-		break
 	case "STATS":
 		// add an event to the calendar at a specific date
 		err = statsCommand(command, srv)
 		if err != nil {
 			return err
 		}
-		break
 	case "GRAPH":
 		// graph command
 		err = GraphCommand(command, srv)
